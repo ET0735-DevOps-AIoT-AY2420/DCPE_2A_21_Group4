@@ -74,7 +74,7 @@ The static software architecture includes:
   - Auth.py
   - calculation.py
 - **Hardware Abstraction Layer (HAL)**:
-- - hal_servo.py
+  - hal_servo.py
   - hal_keypad.py
   - hal_adc.py
   - hal_rfid_reader.py
@@ -89,7 +89,7 @@ The static software architecture includes:
 1. **User**:
    - Register an account and log in.
    - Search and reserve books.
-   - Receive notifications and manage loans.
+   - Receive notifications and pay fines for overdue returns.
 2. **Admin**:
    - Add or update book details.
    - Monitor reservations and usage reports.
