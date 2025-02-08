@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reserved Books</title>
+    <link rel="stylesheet" href="/static/css/menuBarStyle.css" type="text/css">
+    <link rel="stylesheet" href="/static/css/reservedStyle.css" type="text/css">
+
+    <!-- Font-family (Poppins) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Icon Libraries -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+    <script src="/static/js/menuBar.js" defer></script>
+    <script type="module" src="/static/js/reserved.js"></script>
+</head>
+<body>
+
+    <div class="menu-bar">
+        <div class="menu-items">
+            <a href="HomePage.html" class="menu-item active" id="home">Home</a> 
+            <a href="borrowedBooks.html" class="menu-item" id="borrowedBooks">Borrowed Books</a>
+            <a href="userDashboard.html" class="menu-item" id="userDashboard">User Dashboard</a>
+        </div>
+        <div class="menu-icons">
+            <a href="#" class="icon noti"> <i class="fa fa-bell-o"></i></a>
+            <a href="#" class="icon favorite"> <i class="fa fa-heart-o"></i></a>
+        </div>
+    </div> 
+
+    <div class="reservation-container">
+        <h2>Selected Branch: <span id="selected-branch">Branch 1</span></h2>
+        <h3>Book List:</h3>
+        
+        <div id="book-list" class="book-list"></div>
+
+        <div class="reserve-btn-container">
+            <button id="reserve-button" class="reserve-btn">Reserve</button>
+        </div>
+    </div>
+
+</body>
+</html>

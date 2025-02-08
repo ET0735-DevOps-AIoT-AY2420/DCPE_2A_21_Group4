@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Additional Info</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/additional_info.css') }}">
+    <style>
+        .alert {
+            padding: 10px;
+            margin: 10px 0;
+            color: white;
+            text-align: center;
+            border-radius: 5px;
+        }
+        .alert-danger { background-color: #ff4d4d; } /* errors */
+        .alert-success { background-color: #4CAF50; } /* success */
+        .alert-warning { background-color: #ff9800; } /* warnings */
+    </style>
+</head>
+<body>
+    <div class="background">
+        <div class="sign-up-box">
+            <h1>Additional Info</h1>
+
+           
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+           
+
+            <form id="additionalInfoForm" method="POST" action="{{ url_for('additional_info') }}">
+                <input type="text" name="finNumber" id="finNumber" placeholder="Enter your FIN Number" required />
+                <input type="text" name="studentCardQR" id="studentCardQR" placeholder="Enter Student Card QR Code" required />
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+    </div>
+
+  
+    <script>
+        document.getElementById("additionalInfoForm").addEventListener("submit", function(event) {
+            let finNumber = document.getElementById("finNumber").value.trim().toUpperCase();
+            let finPattern = /^[A-Z]\d{7}[A-Z]$/; 
+
+            if (!finPattern.test(finNumber)) {
+                alert("Incorrect format! e.g. A1234567Z");
+                event.preventDefault(); 
+            }
+
+            if (!qrPattern.test(studentCardQR)) {
+                alert("Incorrect format! It must be exactly 7 digits.");
+                event.preventDefault(); 
+            }
+
+        });
+    </script>
+</body>
+</html>
