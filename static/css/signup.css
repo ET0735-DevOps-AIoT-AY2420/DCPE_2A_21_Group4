@@ -1,0 +1,113 @@
+/* General Styles */
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    height: 100%;
+    background: #f8f4ec; /* Background color */
+}
+
+/* Parent Container for Both Pages */
+.body-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%; /* Full width */
+    height: 100vh; /* Full viewport height */
+}
+
+/* Form Container */
+.form-container {
+    display: flex;
+    width: 90%; /* Adjust width to fit the screen */
+    max-width: 1200px; /* Limit the maximum width */
+    height: 600px; /* Adjust height */
+    background: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 15px;
+    overflow: hidden;
+}
+/* Right Form Section */
+.form-section {
+    width: 50%; /* Equal width for both sections */
+    padding: 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: #fffdf9; /* Light cream background */
+}
+
+/* Heading and Text */
+.form-section h1 {
+    font-size: 36px;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.form-section h3 {
+    font-size: 18px;
+    color: #777;
+    margin-bottom: 30px;
+}
+
+/* Form Fields */
+form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+input {
+    padding: 15px;
+    margin-bottom: 20px;
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    background: #f8f8f8;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+input:focus {
+    border-color: #0078d7;
+    box-shadow: 0 0 5px rgba(0, 120, 215, 0.5);
+    outline: none;
+}
+
+/* Button */
+button {
+    padding: 15px;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background: #f2b434;
+    color: black;
+    width: 100%;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background: #005a9e;
+}
+
+/* Link */
+.link {
+    margin-top: 15px;
+    font-size: 16px;
+    color: #0078d7;
+    text-decoration: none;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+.error-message {
+    font-size: 14px;
+    color: red;
+    margin-top: -10px;
+    margin-bottom: 15px;
+}

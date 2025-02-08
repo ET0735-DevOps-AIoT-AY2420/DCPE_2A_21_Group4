@@ -1,0 +1,116 @@
+/* General Styles */
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    height: 100%;
+    background: #f8f4ec; /* Background color */
+}
+
+/* Parent Container for Both Pages */
+.body-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%; /* Full width */
+    height: 100vh; /* Full viewport height */
+    padding: 20px; /* Optional padding */
+}
+
+/* Form Container */
+.form-container {
+    display: flex;
+    width: 80%; /* Adjust this for wider layout */
+    max-width: 1200px; /* Limit maximum width */
+    height: 600px; /* Adjust height */
+    background: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+/* Left Image Section */
+.image-section {
+    width: 50%; /* Takes 50% of the container */
+    height: 100%;
+    background: url('../images/books.jpg') center center / cover no-repeat;
+}
+
+/* Right Form Section */
+.form-section {
+    width: 50%; /* Takes the other 50% */
+    padding: 50px; /* Space for the content */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    background: #fffdf9; /* Light cream background */
+}
+
+/* Heading and Text */
+.form-section h1 {
+    font-size: 36px;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.form-section p {
+    font-size: 18px;
+    color: #777;
+    margin-bottom: 30px;
+}
+
+/* Form Fields */
+form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+input {
+    padding: 15px;
+    margin-bottom: 20px;
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    background: #f8f8f8;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+input:focus {
+    border-color: #3b982f;
+    box-shadow: 0 0 5px rgba(216, 228, 138, 0.5);
+    outline: none;
+}
+
+/* Button */
+button {
+    padding: 15px;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background: #f2b434;
+    color: white;
+    width: 100%;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background: #005a9e;
+}
+
+/* Link */
+.link {
+    margin-top: 15px;
+    font-size: 16px;
+    color: #000000;
+    text-decoration: none;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
