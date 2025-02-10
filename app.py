@@ -134,6 +134,34 @@ def signin():
 
     return render_template("signin.html")
 
+@app.route("/additional_info", methods=["GET", "POST"])
+def additional_info():
+    if "user_email" not in session or "user_id" not in session:
+        flash("Please sign in to access this page.", "danger")
+        return redirect(url_for("signin"))
+
+    if request.method == "POST":
+        fin_number = request.form["finNumber"].strip()
+        student_card_qr = request.form["studentCardQR"].strip()
+
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            cursor.execute("UPDATE users SET finNumber = ?, studentCardQR = ? WHERE id = ?",
+                           (fin_number, student_card_qr, session["user_id"]))
+            conn.commit()
+            conn.close()
+
+            flash("Additional info saved successfully!", "success")
+            return redirect(url_for("homepage"))
+        except Exception as e:
+            flash(f"An error occurred: {str(e)}", "danger")
+            return redirect(url_for("additional_info"))
+
+    return render_template("additional_info.html")
+
+
 # ---------------------- MAIN PAGES ----------------------
 @app.route('/homepage')
 def homepage():
