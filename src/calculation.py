@@ -2,7 +2,7 @@ import sqlite3
 from datetime import datetime, timedelta
 
 # Database path
-db_path = "/mnt/data/DCPE_2A_21_Group4/DCPE_2A_21_Group4/library.db"
+db_path = r"D:\GamayDCPE2A21_Group4\DCPE_2A_21_Group4\library.db" #change the path to your own path
 
 # Fine settings
 LOAN_PERIOD = 18  # Days
