@@ -104,7 +104,7 @@ def insert_users():
             INSERT OR IGNORE INTO users (name, email, password, finNumber, studentCardQR, payableFines, rfid_id)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', [
-            ("John Doe", "john.doe@example.com", "password123", "G1234567X", "QR123456", 0, "765343767958"),
+            ("John Doe", "john.doe@example.com", "password123", "G1234567X", "QR123456", 1, "765343767958"),
             ("Alice Smith", "alice.smith@example.com", "password456", "G7654321Y", "QR654321", 5, "765343767922"),
             ("Bob Johnson", "bob.johnson@example.com", "password789", "F9876543Z", "QR987654", 10, "765343767933")
         ])
