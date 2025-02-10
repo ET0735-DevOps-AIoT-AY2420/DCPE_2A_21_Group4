@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,55 +7,46 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/bistyle.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/menuBarStyle.css') }}">
 
-  <!-- font-family (Poppins) -->
+  <!-- Font-family (Poppins) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-  <!--logo design-->
+  <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-
-  <script src="{{ url_for('static', filename='js/menuBar.js') }}"></script>
-  <script type="module" src="{{ url_for('static', filename='js/biscript.js') }}"></script>
 
 </head>
 <body>
     <div class="menu-bar">
         <div class="menu-items">
-           <a href="HomePage.html" class="menu-item active" id="home" onclick="activeTab(this)">Home</a> 
-           <a href="BorrowedBooks.html" class="menu-item" id="borrowedBooks" onclick="activeTab(this)">Borrowed Books</a>
-           <a href="userdashboard.html" class="menu-item" id="userDashboard" onclick="activeTab(this)">User Dashboard</a>
+           <a href="{{ url_for('homepage') }}" class="menu-item active">Home</a> 
+           <a href="{{ url_for('viewmore') }}" class="menu-item">View More Books</a>
+           <a href="{{ url_for('userdashboard') }}" class="menu-item">User Dashboard</a>
         </div>
-         <div class="menu-icons">
-         <a href="#" class="icon noti"> <i class="fa fa-bell-o" aria-hidden="true"></i></a>
-         <a href="#" class="icon favorite"> <i class="fa fa-heart-o" aria-hidden="true"></i></a>
-         </div>
-       </div> 
+    </div> 
 
-       <div class="book-container">
+    <div class="book-container">
         <div class="book-cover-container">
-            <img id="book-image" alt="Book Cover" class="book-cover">
+            <img id="book-image" src="/static/images/default-book.jpg" alt="Book Cover" class="book-cover">
             <button id="borrow-button" class="borrow-btn">Borrow</button>
-    </div>
-    <div class="book-details">
-        <h1 id="book-title"></h1>
-        <h3 id="book-author"></h3>
-        <p id="book-description"></p>
-        <p><strong>Genre</strong> <span id="book-genres"></span></p>
-        <p><strong>Status</strong> <span id="book-status"></span></p>
-        <p><strong>Language</strong> <span id="book-language"></span></p>
-        
-        <button id="favorite-btn" class="heart-button">
-            <i class="far fa-heart" id="favorite-icon"></i>
-        </button>
-    </div>
-    <div id="branch-popup" class="branch-popup-overlay">
-        <div class="branch-popup-content">
-            <iframe src="/branch.html" width="100%" height="100%" frameborder="0"></iframe>
         </div>
-    </div>    
-    
+        <div class="book-details">
+            <h1 id="book-title">Loading...</h1>
+            <h3 id="book-author"></h3>
+            <p id="book-description"></p>
+            <p><strong>Genre:</strong> <span id="book-genre"></span></p>
+            <p><strong>Status:</strong> <span id="book-status"></span></p>
+            <p><strong>Language:</strong> <span id="book-language"></span></p>
+            
+            <!-- Favorite Button -->
+            <button id="favorite-btn" class="heart-button">
+                <i class="far fa-heart" id="favorite-icon"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 🔗 Link JavaScript File -->
+    <script src="{{ url_for('static', filename='js/biscript.js') }}" defer></script>
 </body>
 </html>
-
