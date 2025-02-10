@@ -2,9 +2,9 @@ import sqlite3
 from datetime import datetime, timedelta
 
 # Database path
-db_path = r"D:\GamayDCPE2A21_Group4\DCPE_2A_21_Group4\library.db" #change the path to your own path
+db_path = r"D:\GamayDCPE2A21_Group4\DCPE_2A_21_Group4\library.db"  #change the path to your own path
 
-# Fine settings
+# Fine settings 
 LOAN_PERIOD = 18  # Days
 EXTENSION_PERIOD = 7  # Days
 FINE_PER_DAY = 0.15  # SGD
