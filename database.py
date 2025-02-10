@@ -14,7 +14,7 @@ def init_db():
     with get_db_connection() as conn:
         cursor = conn.cursor()
 
-        # Create Users Table
+        # Create Users Table with RFID ID
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -24,6 +24,7 @@ def init_db():
                 finNumber TEXT DEFAULT NULL,
                 studentCardQR TEXT DEFAULT NULL,
                 payableFines INTEGER DEFAULT 0,
+                rfid_id TEXT UNIQUE DEFAULT NULL,
                 createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
@@ -100,12 +101,12 @@ def insert_users():
         cursor = conn.cursor()
         
         cursor.executemany('''
-            INSERT OR IGNORE INTO users (name, email, password, finNumber, studentCardQR, payableFines)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT OR IGNORE INTO users (name, email, password, finNumber, studentCardQR, payableFines, rfid_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', [
-            ("John Doe", "john.doe@example.com", "password123", "G1234567X", "QR123456", 0),
-            ("Alice Smith", "alice.smith@example.com", "password456", "G7654321Y", "QR654321", 5),
-            ("Bob Johnson", "bob.johnson@example.com", "password789", "F9876543Z", "QR987654", 10)
+            ("John Doe", "john.doe@example.com", "password123", "G1234567X", "QR123456", 0, "765343767958"),
+            ("Alice Smith", "alice.smith@example.com", "password456", "G7654321Y", "QR654321", 5, NULL),
+            ("Bob Johnson", "bob.johnson@example.com", "password789", "F9876543Z", "QR987654", 10, NULL)
         ])
         
         conn.commit()
