@@ -1,94 +1,80 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-analytics.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+document.addEventListener("DOMContentLoaded", function () {
+    let books = [];
+    let displayLimit = 5; // Show first 5 books
 
-const firebaseConfig = {
-    apiKey: "AIzaSyAVmQ8dh6pGV9pbTk1I6GmvZuXT-FR8Sus",
-    authDomain: "library-system-67346.firebaseapp.com",
-    databaseURL: "https://library-system-67346-default-rtdb.firebaseio.com",
-    projectId: "library-system-67346",
-    storageBucket: "library-system-67346.firebasestorage.app",
-    messagingSenderId: "487833718014",
-    appId: "1:487833718014:web:20e8256c3deb8e22d7a9af",
-    measurementId: "G-W081J17K2Y"
-};
+    async function fetchBooks() {
+        const bookList = document.getElementById('book-list');
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const db = getFirestore(app);
+        try {
+            const response = await fetch("/api/books"); // Fetch all books from API
+            if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
 
-let books = [];
-let displayLimit = 5;  
+            books = await response.json();
 
+            if (!Array.isArray(books)) {
+                throw new Error("Invalid JSON response format");
+            }
 
-async function fetchBooks() {
-    const bookList = document.getElementById('book-list');
-    try {
-        const booksCollection = collection(db, 'Books');
-        const querySnapshot = await getDocs(booksCollection);
+            if (books.length === 0) {
+                bookList.innerHTML = "<p>No books available.</p>";
+                return;
+            }
 
-        if (querySnapshot.empty) {
-            bookList.innerHTML = "<p>No books available.</p>";
-            return;
+            displayBooks(books.slice(0, displayLimit)); // Display only 5 books initially
+
+        } catch (error) {
+            console.error("Error fetching books:", error);
+            bookList.innerHTML = "<p>Failed to load books. Please try again later.</p>";
         }
-
-        querySnapshot.forEach((doc) => {
-            const book = doc.data();
-            books.push(book); 
-            book.DocumentID = doc.id; 
-        });
-
-        
-        displayBooks(books.slice(0, displayLimit));
-
-    } catch (error) {
-        console.error("Error fetching books: ", error);
-        bookList.innerHTML = "<p>Failed to load books. Please try again later.</p>";
     }
-}
 
-const searchBar = document.querySelector('.search-bar');
+    const searchBar = document.querySelector('.search-bar');
 
-searchBar.addEventListener('input', (event) => {
-    const query = event.target.value.toLowerCase();
-    const filteredBooks = books.filter(book => {
-        const title = book.Title ? book.Title.toLowerCase() : '';
-        const author = book.Author ? book.Author.toLowerCase() : '';
-        const genre = book.Genre ? book.Genre.toLowerCase() : '';
+    searchBar.addEventListener('input', (event) => {
+        const query = event.target.value.toLowerCase();
+        const filteredBooks = books.filter(book => {
+            const title = book.title ? book.title.toLowerCase() : '';
+            const author = book.author ? book.author.toLowerCase() : '';
+            const genre = book.genre ? book.genre.toLowerCase() : '';
 
-        return title.includes(query) || author.includes(query) || genre.includes(query);
-    });
-
-    displayBooks(filteredBooks.slice(0, displayLimit));
-});
-
-
-function displayBooks(booksToDisplay) {
-    const bookList = document.getElementById('book-list');
-    bookList.innerHTML = ''; 
-
-    booksToDisplay.forEach(book => {
-        const bookItem = document.createElement('div');
-        bookItem.classList.add('book-item');
-        
-        const bookImage = document.createElement('img');
-        bookImage.src = book.Image || 'default-image.png'; 
-        bookImage.alt = book.Title || 'No Title';
-
-        
-        const bookTitle = document.createElement('p');
-        bookTitle.style.fontSize = "20px";
-        bookTitle.textContent = book.Title;
-
-        bookItem.addEventListener('click', () => {
-            window.location.href = `/bookinfo.html?documentId=${book.DocumentID}`;
+            return title.includes(query) || author.includes(query) || genre.includes(query);
         });
 
-        bookItem.appendChild(bookImage);
-        bookItem.appendChild(bookTitle);
-        bookList.appendChild(bookItem);
+        displayBooks(filteredBooks.slice(0, displayLimit));
     });
-}
 
-fetchBooks();
+    function displayBooks(booksToDisplay) {
+        const bookList = document.getElementById('book-list');
+        bookList.innerHTML = ''; // Clear previous books
+
+        booksToDisplay.forEach(book => {
+            const bookItem = document.createElement('div');
+            bookItem.classList.add('book-item');
+
+            const bookImage = document.createElement('img');
+
+            // Set book image (check if URL is valid)
+            if (book.image && (book.image.startsWith("http") || book.image.startsWith("https"))) {
+                bookImage.src = book.image;
+            } else {
+                bookImage.src = `/static/images/${book.image}` || "/static/images/default-book.jpg"; // Fallback image
+            }
+
+            bookImage.alt = book.title || 'No Title';
+
+            const bookTitle = document.createElement('p');
+            bookTitle.style.fontSize = "20px";
+            bookTitle.textContent = book.title;
+
+            bookItem.addEventListener('click', () => {
+                window.location.href = `/bookinfo.html?bookId=${book.bookId}`; // Navigate to bookinfo page
+            });
+
+            bookItem.appendChild(bookImage);
+            bookItem.appendChild(bookTitle);
+            bookList.appendChild(bookItem);
+        });
+    }
+
+    fetchBooks();
+});
