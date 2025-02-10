@@ -1,9 +1,30 @@
 from flask import Flask, request, render_template, redirect, url_for, flash, session
-from firebase_setup import db  # Import Firestore client
+from flask_sqlalchemy import SQLAlchemy
 import os
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Secure secret key for session management
+
+# SQLite Database Configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///library.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+# User Model
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    password = db.Column(db.String(100), nullable=False)
+    fin_number = db.Column(db.String(50), nullable=True)
+    student_card_qr = db.Column(db.String(255), nullable=True)
+    payable_fines = db.Column(db.Float, default=0.0)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+# Create database tables
+with app.app_context():
+    db.create_all()
 
 # ---------------------- SIGN UP ----------------------
 @app.route("/", methods=["GET", "POST"])
@@ -22,30 +43,17 @@ def signup():
             flash("Passwords do not match!", "danger")
             return redirect(url_for("signup"))
 
-        try:
-            users_ref = db.collection("users")
-            existing_user = users_ref.where("email", "==", email).stream()
-
-            if any(existing_user):
-                flash("Email already exists! Please sign in.", "warning")
-                return redirect(url_for("signin"))
-
-            new_user = users_ref.add({
-                "name": name,
-                "email": email,
-                "password": password,
-                "finNumber": None,
-                "studentCardQR": None,
-                "payableFines": 0,
-                "createdAt": db.collection("users").document().get().create_time
-            })
-
-            flash("Sign-up successful! Please sign in.", "success")
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            flash("Email already exists! Please sign in.", "warning")
             return redirect(url_for("signin"))
 
-        except Exception as e:
-            flash(f"An error occurred: {str(e)}", "danger")
-            return redirect(url_for("signup"))
+        new_user = User(name=name, email=email, password=password)
+        db.session.add(new_user)
+        db.session.commit()
+
+        flash("Sign-up successful! Please sign in.", "success")
+        return redirect(url_for("signin"))
 
     return render_template("signup.html")
 
@@ -56,33 +64,21 @@ def signin():
         email = request.form["email"].strip()
         password = request.form["password"].strip()
 
-        try:
-            users_ref = db.collection("users")
-            query = users_ref.where("email", "==", email).stream()
-            user = None
-            user_id = None
+        user = User.query.filter_by(email=email).first()
 
-            for doc in query:
-                user = doc.to_dict()
-                user_id = doc.id  # Firestore Document ID
+        if user and user.password == password:
+            session["user_email"] = email
+            session["user_id"] = user.id
 
-                if user and user["password"] == password:
-                    session["user_email"] = email
-                    session["user_id"] = user_id  # Store User ID in session
+            if not user.fin_number or not user.student_card_qr:
+                flash("Please provide additional information.", "warning")
+                return redirect(url_for("additional_info"))
 
-                    if not user.get("finNumber") or not user.get("studentCardQR"):
-                        flash("Please provide additional information.", "warning")
-                        return redirect(url_for("additional_info"))
+            flash("Sign-in successful!", "success")
+            return redirect(url_for("homepage"))
 
-                    flash("Sign-in successful!", "success")
-                    return redirect(url_for("homepage"))
-
-            flash("Invalid email or password!", "danger")
-            return redirect(url_for("signin"))
-
-        except Exception as e:
-            flash(f"An error occurred: {str(e)}", "danger")
-            return redirect(url_for("signin"))
+        flash("Invalid email or password!", "danger")
+        return redirect(url_for("signin"))
 
     return render_template("signin.html")
 
@@ -97,25 +93,20 @@ def additional_info():
         fin_number = request.form["finNumber"].strip()
         student_card_qr = request.form["studentCardQR"].strip()
 
-        try:
-            user_doc_ref = db.collection("users").document(session["user_id"])
-            user_doc_ref.update({
-                "finNumber": fin_number,
-                "studentCardQR": student_card_qr
-            })
-
+        user = User.query.get(session["user_id"])
+        if user:
+            user.fin_number = fin_number
+            user.student_card_qr = student_card_qr
+            db.session.commit()
             flash("Additional info saved successfully!", "success")
             return redirect(url_for("homepage"))
-        except Exception as e:
-            flash(f"An error occurred: {str(e)}", "danger")
-            return redirect(url_for("additional_info"))
 
     return render_template("additional_info.html")
 
 # ---------------------- MAIN PAGES ----------------------
 @app.route('/HomePage.html')
 def homepage():
-    user_id = session.get("user_id")  # Get user ID from session
+    user_id = session.get("user_id")
     return render_template("HomePage.html", user_id=user_id)
 
 @app.route('/viewmore.html')
