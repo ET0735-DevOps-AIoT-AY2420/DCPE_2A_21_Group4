@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Additional Info</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/additional_info.css') }}">
+</head>
+<body>
+    <div class="background">
+        <div class="sign-up-box">
+            <h1>Additional Info</h1>
+            <form id="additionalInfoForm" method="POST" action="{{ url_for('additional_info') }}">
+                <input type="text" name="finNumber" id="finNumber" placeholder="Enter your FIN Number" required />
+                <input type="text" name="studentCardQR" id="studentCardQR" placeholder="Enter Student Card QR Code" required />
+                <button type="submit">Submit</button>
+            </form>
+            
+        </div>
+    </div>
+</body>
+</html> 

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Book Reservation</title>
+
+    <!--css files-->
+    <link href="/static/css/menuBarStyle.css" type="text/css" rel="stylesheet">
+
+     <!-- font-family (Poppins) -->
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
+   <!--logo design-->
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+   <script src="/static/js/menuBar.js" defer></script>
+
+</head>
+<body>
+    <div class="menu-bar">
+          <div class="menu-items">
+             <a href="HomePage.html" class="menu-item active" id="home" onclick="activeTab(this)">Home</a> 
+             <a href="BorrowedBooks.html" class="menu-item" id="borrowedBooks" onclick="activeTab(this)">Borrowed Books</a>
+             <a href="userdashboard.html" class="menu-item" id="userDashboard" onclick="activeTab(this)">User Dashboard</a>
+          </div>
+           <div class="menu-icons">
+           <a href="#" class="icon noti"> <i class="fa fa-bell-o" aria-hidden="true"></i></a>
+           <a href="#" class="icon favorite"> <i class="fa fa-heart-o" aria-hidden="true"></i></a>
+           </div>
+         </div> 
+</body>
+</html>

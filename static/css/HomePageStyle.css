@@ -1,0 +1,84 @@
+.home-image{
+    width: 100%;
+    height: 400px;
+    object-fit: fill;
+}
+
+.section1 {
+    position: relative;
+    width: 100%;
+    height: 400px; 
+    overflow: hidden;
+}
+
+.search-bar-container {
+    position: absolute;
+    top: 70%; 
+    left: 50%; 
+    transform: translate(-50%, -50%);
+    width: 50%; 
+}
+
+.search-bar-wrapper {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid black;
+}
+
+.search-icon {
+    margin-right: 10px;
+    color: #888; 
+    font-size: 16px;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 10px 20px;
+    font-size: 16px;
+    
+}
+
+.recommended-section {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.book-list {
+    display: flex;
+    justify-content: space-evenly;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin: 5px 0;
+}
+
+.book-list img {
+    width:200px;
+    height: 300px;
+    border-radius: 5px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+}
+
+.view-more {
+    margin-top: 10px;
+}
+
+.view-more a {
+    text-decoration: none;
+    color: #007bff; 
+    font-weight: bold;
+    font-size: 16px;
+    transition: color 0.3s ease;
+}
+
+.view-more a:hover {
+    color: #0056b3; 
+}
+
+

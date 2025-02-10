@@ -1,0 +1,187 @@
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #FFC107;
+    padding: 0px 10px;
+}
+
+header nav a {
+    margin: 0 15px;
+    text-decoration: none;
+    color: black;
+    font-weight: bold;
+}
+
+nav a.active {
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+.container {
+    padding: 10px;
+}
+
+.stats, .catchups, .returned-books {
+    margin: 20px 0;
+}
+
+/* Stats Section */
+.stats {
+    display: flex;
+    justify-content: space-around;
+}
+
+.stat-box {
+    background: #FFC107;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    width: 25%;
+}
+
+/* Catch-Ups Section */
+.catchups {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.catchups h3 {
+    background: #FFC107;
+    padding: 10px;
+    margin: 0;
+    border-radius: 8px 8px 0 0;
+}
+
+.catchup-item {
+    margin: 10px 0;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+/* User Info Section */
+.user-info {
+    border: 1px solid #ddd;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.profile-container {
+    position: relative;
+    display: inline-block;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.profile-image {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: block;
+}
+
+.edit-profile-picture {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: none; /* Hidden by default */
+}
+
+.edit-icon {
+    width: 20px;
+    height: 20px;
+}
+
+/* Form Fields */
+#user-info-form input {
+    display: block;
+    margin: 10px 0;
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+#user-info-form button {
+    margin-top: 10px;
+    padding: 8px 15px;
+    border: none;
+    background-color: #FFC107;
+    color: black;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#user-info-form button:hover {
+    background-color: #e6b106;
+}
+
+/* Returned Books Section */
+.returned-books table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.returned-books th, .returned-books td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+.returned-books th {
+    background-color: #FFC107;
+}
+
+.popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+}
+
+.popup-content {
+    position: relative;
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #333;
+}
+
+.popup h2 {
+    margin-top: 0;
+    font-size: 20px;
+    color: #444;
+}
+
+.popup p {
+    font-size: 16px;
+    color: #666;
+}

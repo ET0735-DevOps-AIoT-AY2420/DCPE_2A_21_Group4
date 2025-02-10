@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/signin.css') }}">
+    <style>
+        .image-section {
+            background-image: url('{{ url_for("static", filename="images/books.jpg") }}');
+            background-position: center;
+            background-size: cover;
+            background-repeat: no-repeat;
+            width: 50%;
+            height: 100%;
+        }
+    </style>
+<body>
+    <div class="body-container">
+        <div class="form-container">
+            <div class="image-section"></div>
+            <div class="form-section">
+                <h1>Sign In Now</h1>
+                <p>We love your clients</p>
+                <form id="signinForm" method="POST" action="{{ url_for('signin') }}">
+                    <input type="email" id="signinEmail" name="email" placeholder="Your E-mail" required />
+                    <input type="password" id="signinPassword" name="password" placeholder="Your password" required />
+                    <button type="submit">Sign In</button>
+                </form>
+                <a href="{{ url_for('signup') }}" class="link">Sign Up</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
