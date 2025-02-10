@@ -105,8 +105,8 @@ def insert_users():
             VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', [
             ("John Doe", "john.doe@example.com", "password123", "G1234567X", "QR123456", 0, "765343767958"),
-            ("Alice Smith", "alice.smith@example.com", "password456", "G7654321Y", "QR654321", 5, NULL),
-            ("Bob Johnson", "bob.johnson@example.com", "password789", "F9876543Z", "QR987654", 10, NULL)
+            ("Alice Smith", "alice.smith@example.com", "password456", "G7654321Y", "QR654321", 5, "765343767922"),
+            ("Bob Johnson", "bob.johnson@example.com", "password789", "F9876543Z", "QR987654", 10, "765343767933")
         ])
         
         conn.commit()
