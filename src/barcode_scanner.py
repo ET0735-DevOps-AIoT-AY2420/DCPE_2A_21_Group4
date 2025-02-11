@@ -1,96 +1,66 @@
-import sys
-sys.path.append("./src")  # Ensure 'src' is included in Python path
-
 from picamera2 import Picamera2, Preview
 from pyzbar.pyzbar import decode
 import cv2
 import numpy as np
-from hal import hal_servo as servo  # Import HAL Servo module
-from hal import hal_led as led      # Import HAL LED module
-from hal import hal_buzzer as buzzer  # Import HAL Buzzer module
-from firebase_admin import firestore, initialize_app, credentials
-import time
+import sys
+import os
 
-# ✅ Initialize Firebase
-cred = credentials.Certificate("serviceAccountKey.json")  # Ensure this file is in the root directory
-initialize_app(cred)
-db = firestore.client()
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))  # Add parent directory to path
 
-# ✅ Initialize Servo
-servo.init()
-SERVO_ANGLE = 90  # Angle to move the servo when barcode is matched
+from database import get_user_by_barcode  # Import function to check user in DB
+from database import get_db_connection
 
-# ✅ Initialize LED & Buzzer
-led.init()
-buzzer.init()
+def scan_barcode():
+    """Scans barcode and returns user data if found."""
+    print("📸 Starting barcode scanner... Please scan your QR Code.")
 
-# ✅ Initialize Camera
-picam2 = Picamera2()
-preview_config = picam2.create_preview_configuration(main={"size": (640, 480)})  
-picam2.configure(preview_config)
-picam2.start_preview(Preview.NULL)
-picam2.start()
+    picam2 = Picamera2()
+    preview_config = picam2.create_preview_configuration(main={"size": (640, 480)})
+    picam2.configure(preview_config)
 
-print("📷 Camera started. Point it at a barcode.")
+    # ✅ FIX: Use Preview.NULL to prevent GUI errors
+    picam2.start_preview(Preview.NULL)  
+    picam2.start()
 
-def check_barcode_in_database(barcode):
-    """
-    Check if the scanned barcode exists in the Firestore 'Books' collection (ISBN field).
-    """
+    user = None
+
     try:
-        books_ref = db.collection("Books")
-        print(f"🔎 Searching Firestore for ISBN: {barcode}")
-        query = books_ref.where("ISBN", "==", barcode).stream()
-        book_found = None
+        while True:
+            frame = picam2.capture_array()
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            decoded_objects = decode(gray)
 
-        for doc in query:
-            book_found = doc.to_dict()
-            break  # Exit after first match
+            for obj in decoded_objects:
+                barcode_data = obj.data.decode('utf-8').strip()
+                print(f"✅ Scanned QR Code: {barcode_data}")
 
-        if book_found:
-            print(f"✅ Matched Book: {book_found.get('Title', 'Unknown Title')} - ISBN: {book_found.get('ISBN')}")
-            return True
-        else:
-            print("❌ No match found in database.")
-            return False
+                # Check if the barcode belongs to a registered user
+                user = get_user_by_barcode(barcode_data)
+                if user:
+                    print(f"🎉 User authenticated: {user['name']} ({user['email']})")
+                    picam2.stop()  # ✅ FIX: No need to stop preview
+                    cv2.destroyAllWindows()
+                    return user  # ✅ Return user details if found
+                
+                else:
+                    print("❌ Invalid barcode. Try again.")
 
-    except Exception as e:
-        print(f"🔥 Error checking database: {e}")
-        return False
+            # Show camera feed
+            cv2.imshow("Barcode Scanner", frame)
 
-# ✅ Main Loop
-try:
-    while True:
-        frame = picam2.capture_array()
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        decoded_objects = decode(gray)
+            # Stop scanning if 'q' is pressed
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
 
-        for obj in decoded_objects:
-            barcode_data = obj.data.decode('utf-8')
-            print(f"📌 Detected Barcode: {barcode_data}")
+    except KeyboardInterrupt:
+        print("⏹ Stopping barcode scanner...")
+    finally:
+        # ✅ FIX: Only stop camera (No stop_preview)
+        try:
+            picam2.stop()
+            cv2.destroyAllWindows()
+        except Exception as e:
+            print(f"⚠️ Warning: {e}")
 
-            # ✅ If the barcode exists in Firestore
-            if check_barcode_in_database(barcode_data):
-                print("🚀 Matched ISBN! Turning the servo.")
-                servo.set_servo_position(SERVO_ANGLE)  # Move servo
-                time.sleep(1)  # Small delay before resetting
-                servo.set_servo_position(0)  # Reset servo
-            else:
-                # ❌ If barcode is not found in the database, turn on LED & Buzzer
-                print("⚠️ Invalid Barcode! Activating LED and Buzzer.")
-                led.set_output(24, 1)  # Turn LED ON
-                buzzer.turn_on()
-                time.sleep(2)  # Keep LED & Buzzer ON for 2 seconds
-                led.set_output(24, 0)  # Turn LED OFF
-                buzzer.turn_off()
+    return None
 
-        # ✅ Save the image instead of displaying it (for headless setup)
-        cv2.imwrite("barcode_output.jpg", frame)
-        print("📸 Image saved as barcode_output.jpg")
-
-except KeyboardInterrupt:
-    print("🛑 Stopping barcode detection...")
-finally:
-    picam2.stop_preview()
-    picam2.stop()
-    print("📷 Camera stopped.")

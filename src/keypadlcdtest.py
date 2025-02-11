@@ -1,87 +1,163 @@
+import sqlite3
+import time
 import sys
 import os
+from datetime import datetime, timedelta
+from hal import hal_keypad, hal_lcd
 
-# Get the absolute path of the project root
-project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "src"))
-sys.path.append(project_path)  # Add src/ to sys.path
-
-# Now import the modules
-from hal import hal_keypad  
-from hal import hal_lcd
-
-    
-from time import sleep
+db_path = "D:\GamayDCPE2A21_Group4\DCPE_2A_21_Group4\library.db"  #change the path to your own path
 
 lcd = hal_lcd.lcd()
 
 MENU_STATES = [
-    ("1. Enter Book Code", "****************"),  # REQ-01
-    ("1. Reserve Book", "2. Make Payment"),  # REQ-02
-    ("1. Type in your ID", "123456789"),  # REQ-03
-    ("1. Choose Branch", "2. Enter Branch Number"),  # REQ-04
-    ("Collect book within", "5 days"),  # REQ-05
-    ("Loan Period: 18 days", ""),  # REQ-06
-    ("Exceeds Limit", ""),  # REQ-07
-    ("Scan Book Code", "Waiting..."),  # REQ-08
-    ("Fine: $0.15 per day", ""),  # REQ-09
-    ("Scan RFID to Pay", ""),  # REQ-10
-    ("Please scan QR code", ""),  # REQ-11
-    ("Successful", ""),  # REQ-11 
+    ("1. Enter Book Code", "Fetching..."),  
+    ("2. Choose Branch", "Enter Branch Number"),  
+    ("3. Reserve Book", "Collect within 5 days"),  
+    ("4. Pls scan ID", "To authenticate"),  
+    ("5. Loan Period: 18 days", ""),  
+    ("6. Renew for (7d)", ""),
+    ("7. Scan Book Code", "Waiting..."),  
+    ("8. Check Fine: $0.15/day", ""), 
+    ("9. Scan RFID to Pay", ""),  
+    ("10. Successful", ""),
 ]
 
-current_state = 0  # Track the current menu state
-max_books = 10  # Maximum books a user can borrow
-borrowed_books = 0  # Number of books the user has borrowed
-fines_due = 0  # Placeholder for fines amount
+current_state = 0 
+reservation_time = None  
+reservation_duration = 5 * 24 * 60 * 60  # 5 days in seconds
+loan_period = 18 * 24 * 60 * 60  # 18 days in seconds
+renewal_period = 7 * 24 * 60 * 60  # 7 days in seconds
+loan_start_time = None  
+fines_due = 0  
+book_returned = False
+renewed = False
+
+def fetch_branch():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT branch_name FROM branches LIMIT 1")
+    branch = cursor.fetchone()
+    conn.close()
+    return branch[0] if branch else "No Branch Selected"
+
+def fetch_book_code():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT bookId FROM loans ORDER BY borrowDate DESC LIMIT 1")
+    book_id = cursor.fetchone()
+    if book_id:
+        cursor.execute("SELECT ISBN FROM books WHERE bookId = ?", (book_id[0],))
+        isbn = cursor.fetchone()
+        conn.close()
+        return isbn[0] if isbn else "No ISBN Found"
+    conn.close()
+    return "No Book Code Found"
+
+def calculate_fine():
+    global fines_due
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT borrowDate FROM loans ORDER BY borrowDate DESC LIMIT 1")
+    loan_date = cursor.fetchone()
+    conn.close()
+    if not loan_date:
+        return 0
+    loan_date = datetime.strptime(loan_date[0], "%Y-%m-%d")
+    due_date = loan_date + timedelta(days=18)
+    overdue_days = max(0, (datetime.now() - due_date).days)
+    fines_due = overdue_days * 0.15  # $0.15 per day
+    return fines_due
 
 def update_display():
-    """Update LCD with the current menu state"""
     lcd.lcd_clear()
     line1, line2 = MENU_STATES[current_state]
+    if current_state == 1:  
+        line2 = fetch_branch()  
+    if current_state == 0:  
+        line2 = fetch_book_code()
+    if current_state == 8:
+        line2 = f"Fine: ${calculate_fine():.2f}"
     lcd.lcd_display_string(line1, 1)  
-    lcd.lcd_display_string(line2, 2)  
-
+    lcd.lcd_display_string(line2, 2)
 
 def handle_keypress(key):
-    """Handle keypress events from the keypad"""
-    global current_state, borrowed_books, fines_due
-
-    if key == "#":  # Move to the next menu
+    global current_state, fines_due, reservation_time, loan_start_time, book_returned, renewed
+    if key == "#":
         current_state = (current_state + 1) % len(MENU_STATES)
         update_display()
-    elif key == "*":  # Go back to the previous menu
+    elif key == "*":
         current_state = (current_state - 1) % len(MENU_STATES)
         update_display()
-    elif key == "1" and current_state == 6:  # REQ-07: Exceeds Limit
-        if borrowed_books >= max_books:
-            lcd.lcd_clear()
-            lcd.lcd_display_string("Exceeds Limit", 1)
-            sleep(2)
-            update_display()
-    elif key == "2" and current_state == 9:  # REQ-10: Check fines
-        if fines_due > 0:
-            lcd.lcd_clear()
-            lcd.lcd_display_string(f"Fine Due: ${fines_due:.2f}", 1)
-            sleep(2)
-        update_display()
-    elif current_state == 11:  # REQ-11: Scan QR Code
+    elif current_state == 2:
+        reservation_time = time.time()
         lcd.lcd_clear()
-        lcd.lcd_display_string("Successful", 1)
-        sleep(2)
+        lcd.lcd_display_string("Book Reserved", 1)
+        lcd.lcd_display_string("Collect within 5 days", 2)
+        time.sleep(2)
+        update_display()
+    elif current_state == 3:
+        if reservation_time and (time.time() - reservation_time) > reservation_duration:
+            lcd.lcd_clear()
+            lcd.lcd_display_string("Reservation Exceeded", 1)
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM loans WHERE borrowDate < ?", 
+                           (datetime.now() - timedelta(days=5),))
+            conn.commit()
+            conn.close()
+            reservation_time = None
+            time.sleep(2)
+            update_display()
+    elif key == "6" and current_state == 5:
+        if loan_start_time is None:
+            lcd.lcd_clear()
+            lcd.lcd_display_string("No Active Loan", 1)
+            time.sleep(2)
+        elif not renewed:
+            loan_start_time += renewal_period  
+            renewed = True
+            lcd.lcd_clear()
+            lcd.lcd_display_string("Renewed for 7 days", 1)
+            time.sleep(2)
+        else:
+            lcd.lcd_clear()
+            lcd.lcd_display_string("Already Renewed", 1)
+            time.sleep(2)
+        update_display()
+    elif key == "7" and current_state == 6:
+        if loan_start_time is None:
+            lcd.lcd_clear()
+            lcd.lcd_display_string("No Active Loan", 1)
+        else:
+            fines_due = calculate_fine()
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            cursor.execute("UPDATE books SET status = 'available' WHERE bookId = ?", (fetch_book_code(),))
+            conn.commit()
+            conn.close()
+            lcd.lcd_clear()
+            lcd.lcd_display_string("Book Returned", 1)
+        time.sleep(2)
+        update_display()
+    elif key == "9" and current_state == 8:
+        if fines_due > 0:
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            cursor.execute("UPDATE loans SET fine = 0 WHERE borrowDate < ?", (datetime.now(),))
+            conn.commit()
+            conn.close()
+            lcd.lcd_clear()
+            lcd.lcd_display_string(f"Paid: ${fines_due:.2f}", 1)
+            fines_due = 0  
+        time.sleep(2)
         update_display()
     else:
-        print(f"Key Pressed: {key}")  # Print key in terminal
+        print(f"Key Pressed: {key}")  
 
-
-# Initialize Keypad with callback function
 hal_keypad.init(handle_keypress)
-
-# Show initial menu
 update_display()
-
-# Main loop to check for key presses
-print("Press a key on the keypad to navigate...")
-
 while True:
-    hal_keypad.get_key()  # Check for keypress
-    sleep(0.1)  
+    hal_keypad.get_key() 
+    time.sleep(0.1)
+    if not os.path.exists("/dev/input/event0"):
+        sys.exit(0)
