@@ -12,7 +12,7 @@ from database import get_db_connection
 
 def scan_barcode():
     """Scans barcode and returns user data if found."""
-    print("📸 Starting barcode scanner... Please scan your QR Code.")
+    print("Starting barcode scanner... Please scan your QR Code.")
 
     picam2 = Picamera2()
     preview_config = picam2.create_preview_configuration(main={"size": (640, 480)})
@@ -32,7 +32,7 @@ def scan_barcode():
 
             for obj in decoded_objects:
                 barcode_data = obj.data.decode('utf-8').strip()
-                print(f"✅ Scanned QR Code: {barcode_data}")
+                print(f" Scanned QR Code: {barcode_data}")
 
                 # Check if the barcode belongs to a registered user
                 user = get_user_by_barcode(barcode_data)
@@ -43,7 +43,7 @@ def scan_barcode():
                     return user  # ✅ Return user details if found
                 
                 else:
-                    print("❌ Invalid barcode. Try again.")
+                    print(" Invalid barcode. Try again.")
 
             # Show camera feed
             cv2.imshow("Barcode Scanner", frame)
@@ -53,14 +53,13 @@ def scan_barcode():
                 break
 
     except KeyboardInterrupt:
-        print("⏹ Stopping barcode scanner...")
+        print("Stopping barcode scanner...")
     finally:
         # ✅ FIX: Only stop camera (No stop_preview)
         try:
             picam2.stop()
             cv2.destroyAllWindows()
         except Exception as e:
-            print(f"⚠️ Warning: {e}")
+            print(f"Warning: {e}")
 
     return None
-

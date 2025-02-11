@@ -17,7 +17,7 @@ shared_keypad_queue = queue.Queue()
 def key_pressed(key):
     """Callback function to store keypress in queue."""
     shared_keypad_queue.put(key)
-    print(f"🔢 Key Pressed: {key}")  # Debugging
+    print(f" Key Pressed: {key}")  # Debugging
 
 def wait_for_keypress():
     """Wait for a key press and return its value."""
@@ -25,20 +25,20 @@ def wait_for_keypress():
     return key
 
 def main():
-    # ✅ Initialize hardware components
+    #  Initialize hardware components
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
     
     usonic_init()
-    keypad_init(key_pressed)  # ✅ Fix: Assign callback function
+    keypad_init(key_pressed)  #  Fix: Assign callback function
 
-    # ✅ Start keypad polling in background thread
+    #  Start keypad polling in background thread
     keypad_thread = Thread(target=get_key, daemon=True)
     keypad_thread.start()
 
     lcd_display = lcd()
     lcd_display.lcd_clear()
-    print("📌 System ready... Waiting for user presence.")
+    print("System ready... Waiting for user presence.")
 
     while True:
         distance = get_distance()
@@ -49,8 +49,8 @@ def main():
             time.sleep(2)
             lcd_display.lcd_clear()
 
-            print("🕹️ Waiting for key press...")
-            key = wait_for_keypress()  # ✅ Fix: Properly wait for key press
+            print("Waiting for key press...")
+            key = wait_for_keypress()  # Fix: Properly wait for key press
 
             if key == 1:  # Collect Book Process
                 lcd_display.lcd_display_string("Scan Your QR Code", 1)
@@ -62,9 +62,9 @@ def main():
                     time.sleep(2)
                     lcd_display.lcd_clear()
 
-                    print("🕹️ Waiting for book code entry...")
-                    book_code = wait_for_keypress()  # ✅ Fix: Properly wait for book code entry
-                    print(f"📖 Book Code Entered: {book_code}")  # Debugging
+                    print("Waiting for book code entry...")
+                    book_code = wait_for_keypress()  # Fix: Properly wait for book code entry
+                    print(f" Book Code Entered: {book_code}")  # Debugging
 
                     if verify_book_code(book_code, user['id']):
                         lcd_display.lcd_display_string("Book Dispensing", 1)
@@ -93,5 +93,3 @@ def verify_book_code(book_code, user_id):
 
 if __name__ == "__main__":
     main()
-
-
