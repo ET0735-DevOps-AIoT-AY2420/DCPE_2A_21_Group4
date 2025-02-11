@@ -37,7 +37,8 @@ def main():
     keypad_thread.start()
 
     lcd_display = lcd()
-    lcd_display.lcd_clear()
+    lcd_display.lcd_display_string("Hello",1)
+    
     print("System ready... Waiting for user presence.")
 
     while True:
