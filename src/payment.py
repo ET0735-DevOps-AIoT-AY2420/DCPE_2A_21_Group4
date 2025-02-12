@@ -1,50 +1,69 @@
+import time
 import sqlite3
-from database import get_db_connection
+from hal.hal_lcd import lcd
+from hal.hal_keypad import init as keypad_init, get_key
+from barcode_scanner import scan_barcode
 
-def get_user_fines(barcode_id):
-    """Retrieve the payable fines of a user using Student Card QR Code."""
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT payableFines FROM users WHERE studentCardQR = ?", (barcode_id,))
-        result = cursor.fetchone()
-        return result[0] if result else None
+def get_db_connection():
+    conn = sqlite3.connect('library.db') # to update the database location file path from RPI or your local file path
+    conn.row_factory = sqlite3.Row
+    return conn
 
-def process_payment(barcode_id, amount):
-    """Process fine payment and update the user's payable fines."""
-    with get_db_connection() as conn:
+def get_user_by_barcode(barcode):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, payableFines FROM users WHERE studentCardQR = ?", (barcode,))
+    user = cursor.fetchone()
+    conn.close()
+    return user if user else None
+
+def process_payment(user_id, fine_amount):
+    lcd_display = lcd()
+    lcd_display.lcd_clear()
+    lcd_display.lcd_display_string(f"Fine: ${fine_amount}", 1)
+    lcd_display.lcd_display_string("Press # to pay", 2)
+    
+    keypad_init(lambda key: handle_keypress(key, user_id, fine_amount, lcd_display))
+
+def handle_keypress(key, user_id, fine_amount, lcd_display):
+    if key == '#':
+        lcd_display.lcd_clear()
+        lcd_display.lcd_display_string("Processing...", 1)
+        time.sleep(2)
+        
+        conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT payableFines FROM users WHERE studentCardQR = ?", (barcode_id,))
-        result = cursor.fetchone()
-        
-        if not result:
-            return "User not found."
-        
-        current_fines = result[0]
-        if current_fines == 0:
-            return "No outstanding fines."
-        
-        if amount > current_fines:
-            return "Payment exceeds outstanding fines."
-        
-        new_fines = current_fines - amount
-        cursor.execute("UPDATE users SET payableFines = ? WHERE studentCardQR = ?", (new_fines, barcode_id))
+        cursor.execute("UPDATE loans SET returnDate = date('now') WHERE userId = ? AND returnDate IS NULL", (user_id,))
+        cursor.execute("UPDATE users SET payableFines = 0 WHERE id = ?", (user_id,))
         conn.commit()
+        conn.close()
         
-        return f"Payment successful. Remaining fines: {new_fines} SGD"
+        lcd_display.lcd_clear()
+        lcd_display.lcd_display_string("Payment Success!", 1)
+        time.sleep(2)
+    else:
+        lcd_display.lcd_clear()
+        lcd_display.lcd_display_string("Payment Canceled", 1)
+        time.sleep(2)
 
 if __name__ == "__main__":
-    barcode_id = input("Enter Student Card QR Code: ")
-    action = input("Check fines or make payment? (check/pay): ").strip().lower()
+    lcd_display = lcd()
+    lcd_display.lcd_display_string("Scan Student Card", 1)
+    time.sleep(2)
+    lcd_display.lcd_clear()
     
-    if action == "check":
-        fines = get_user_fines(barcode_id)
-        if fines is None:
-            print("User not found.")
+    barcode_id = scan_barcode()
+    user = get_user_by_barcode(barcode_id)
+    
+    if user:
+        user_id, fine_amount = user["id"], user["payableFines"]
+        if fine_amount > 0:
+            process_payment(user_id, fine_amount)
         else:
-            print(f"Outstanding fines: {fines} SGD")
-    elif action == "pay":
-        amount = float(input("Enter payment amount: "))
-        message = process_payment(barcode_id, amount)
-        print(message)
+            lcd_display.lcd_display_string("No fine due.", 1)
+            time.sleep(2)
+            lcd_display.lcd_clear()
     else:
-        print("Invalid action.")
+        lcd_display.lcd_display_string("Scan Failed", 1)
+        time.sleep(2)
+        lcd_display.lcd_clear()
