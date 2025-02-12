@@ -1,45 +1,41 @@
-import firebase_admin
-from firebase_admin import credentials, firestore
+import sqlite3
 from datetime import datetime, timedelta
 
-# Initialize Firebase
-cred = credentials.Certificate("/home/pi/ET0735/DCPE_2A_21_Group4/DCPE_2A_21_Group4/serviceAccountKey.json")  # Replace with your Firebase credentials file
-firebase_admin.initialize_app(cred)
-db = firestore.client()
+# Database path
+db_path = r"D:\GamayDCPE2A21_Group4\DCPE_2A_21_Group4\library.db"  #change the path to your own path
 
-# Fine settings
+# Fine settings 
 LOAN_PERIOD = 18  # Days
 EXTENSION_PERIOD = 7  # Days
 FINE_PER_DAY = 0.15  # SGD
 
 def calculate_fines():
-    loans_ref = db.collection("Loans")
-    loans = loans_ref.stream()
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    
+    # Query all loans
+    cursor.execute("SELECT userId, borrowDate, dueDate, extendStatus, returnDate FROM loans")
+    loans = cursor.fetchall()
     
     user_fines = {}
     
-    for loan in loans:
-        data = loan.to_dict()
-        borrow_date = datetime.strptime(data["borrowDate"], "%Y-%m-%dT%H:%M:%S.%fZ")
-        extended = data.get("extendStatus", "No") == "Yes"
-        return_date = data.get("returnDate")
+    for user_id, borrow_date, due_date, extend_status, return_date in loans:
+        borrow_date = datetime.strptime(borrow_date, "%Y-%m-%d %H:%M:%S")
+        due_date = datetime.strptime(due_date, "%Y-%m-%d %H:%M:%S") if due_date else borrow_date + timedelta(days=LOAN_PERIOD)
         
-        # Calculate due date
-        due_date = borrow_date + timedelta(days=LOAN_PERIOD + (EXTENSION_PERIOD if extended else 0))
+        if extend_status == "Yes":
+            due_date += timedelta(days=EXTENSION_PERIOD)
         
-        # Determine if book is overdue
         today = datetime.utcnow()
-        if return_date:
-            return_date = datetime.strptime(return_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+        return_date = datetime.strptime(return_date, "%Y-%m-%d %H:%M:%S") if return_date else None
         overdue_days = max(0, ((return_date or today) - due_date).days)
         fine = overdue_days * FINE_PER_DAY
         
-        # Add fine to user's total
-        user_id = data["userId"]
         if user_id not in user_fines:
             user_fines[user_id] = 0.0
         user_fines[user_id] += fine
     
+    conn.close()
     return user_fines
 
 if __name__ == "__main__":
