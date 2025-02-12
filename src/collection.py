@@ -16,30 +16,42 @@ shared_keypad_queue = queue.Queue()
 
 def key_pressed(key):
     """Callback function to store keypress in queue."""
-    shared_keypad_queue.put(key)
+    shared_keypad_queue.put(str(key))  # Convert to string to build book code
     print(f" Key Pressed: {key}")  # Debugging
 
-def wait_for_keypress():
-    """Wait for a key press and return its value."""
-    key = shared_keypad_queue.get()
-    return key
+def wait_for_book_code():
+    """Collect multiple keypresses until '#' is pressed."""
+    book_code = ""
+    lcd_display.lcd_display_string("Enter Book Code", 1)
+
+    while True:
+        key = shared_keypad_queue.get()
+        
+        if key == "#":  # User finished entering
+            return book_code  
+        else:
+            book_code += str(key)  # Append pressed key
+            lcd_display.lcd_display_string(book_code, 2)  # Display entered digits
 
 def main():
-    #  Initialize hardware components
+    # ✅ Initialize hardware components
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
-    
-    usonic_init()
-    keypad_init(key_pressed)  #  Fix: Assign callback function
 
-    #  Start keypad polling in background thread
+    GPIO.setup(26, GPIO.OUT)  # ✅ Set GPIO 26 as output before using servo
+
+    usonic_init()
+    keypad_init(key_pressed)  # ✅ Fix: Assign callback function
+
+    # ✅ Start keypad polling in background thread
     keypad_thread = Thread(target=get_key, daemon=True)
     keypad_thread.start()
 
+    global lcd_display
     lcd_display = lcd()
-    lcd_display.lcd_display_string("Hello",1)
+    lcd_display.lcd_display_string("System Ready", 1)
     
-    print("System ready... Waiting for user presence.")
+    print(" System ready... Waiting for user presence.")
 
     while True:
         distance = get_distance()
@@ -50,31 +62,31 @@ def main():
             time.sleep(2)
             lcd_display.lcd_clear()
 
-            print("Waiting for key press...")
-            key = wait_for_keypress()  # Fix: Properly wait for key press
+            print(" Waiting for key press...")
+            key = shared_keypad_queue.get()  # ✅ Wait for key press
 
-            if key == 1:  # Collect Book Process
+            if key == "1":  # Collect Book Process
                 lcd_display.lcd_display_string("Scan Your QR Code", 1)
                 user = scan_barcode()
 
                 if user:
                     lcd_display.lcd_clear()
-                    lcd_display.lcd_display_string("Enter Book Code", 1)
-                    time.sleep(2)
-                    lcd_display.lcd_clear()
-
-                    print("Waiting for book code entry...")
-                    book_code = wait_for_keypress()  # Fix: Properly wait for book code entry
+                    print(" Waiting for book code entry...")
+                    book_code = wait_for_book_code()  # ✅ Collect full book code
                     print(f" Book Code Entered: {book_code}")  # Debugging
 
                     if verify_book_code(book_code, user['id']):
                         lcd_display.lcd_display_string("Book Dispensing", 1)
-                        set_servo_position(90)  # Unlock book compartment
+
+                        GPIO.setup(26, GPIO.OUT)  # ✅ Ensure GPIO 26 is still set as output before using servo
+                        set_servo_position(90)  # ✅ Unlock book compartment
                         time.sleep(3)
-                        set_servo_position(0)  # Lock again
+                        set_servo_position(0)  # ✅ Lock again
                         lcd_display.lcd_clear()
                         lcd_display.lcd_display_string("Take Your Book", 1)
                         time.sleep(3)
+                        lcd_display.lcd_display_string("Book Dispensed", 1)
+                        time.sleep(2)
                         lcd_display.lcd_clear()
                     else:
                         lcd_display.lcd_display_string("Invalid Book Code", 1)
