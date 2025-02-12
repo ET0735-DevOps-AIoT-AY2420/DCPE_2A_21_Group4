@@ -92,12 +92,12 @@ document.getElementById("reserve-button").addEventListener("click", async () => 
             sessionStorage.removeItem("borrowedBooks");
             window.location.href = "/homepage";
         } else {
-            console.error("❌ Reservation failed:", result.error);
-            alert("❌ Failed to reserve books: " + result.error);
+            console.error(" Reservation failed:", result.error);
+            alert(" Failed to reserve books: " + result.error);
         }
 
     } catch (error) {
-        console.error("❌ Error reserving books:", error);
-        alert("❌ Failed to reserve books. Please try again.");
+        console.error("Error reserving books:", error);
+        alert("Failed to reserve books. Please try again.");
     }
 });

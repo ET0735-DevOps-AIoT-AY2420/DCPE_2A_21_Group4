@@ -75,10 +75,12 @@ okButton.addEventListener("click", async () => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 bookId: bookId,
+                isbn: selectedBook.isbn,  // ✅ Ensure ISBN is sent
                 userId: userId,
                 branch: selectedBranchName
             })
         });
+        
 
         // Check if response is valid JSON
         if (!response.ok) {
