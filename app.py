@@ -5,7 +5,7 @@ import os
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Secure session key
 
-DB_NAME = "library.db"
+DB_NAME = "library.db" # add the specific location in RPI
 
 def get_db_connection():
     """Create a new database connection."""

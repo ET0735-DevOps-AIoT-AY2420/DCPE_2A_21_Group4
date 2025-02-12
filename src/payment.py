@@ -1,63 +1,50 @@
-import time
-import queue
-from threading import Thread
+import sqlite3
+from database import get_db_connection
 
-from database import get_user_by_barcode, get_db_connection
-from barcode_scanner import scan_barcode
-from hal.hal_lcd import lcd
-from hal.hal_keypad import init as keypad_init, get_key
+def get_user_fines(barcode_id):
+    """Retrieve the payable fines of a user using Student Card QR Code."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT payableFines FROM users WHERE studentCardQR = ?", (barcode_id,))
+        result = cursor.fetchone()
+        return result[0] if result else None
 
-# Queue for keypad input
-shared_keypad_queue = queue.Queue()
-
-def key_pressed(key):
-    """Callback function to store keypress in queue."""
-    shared_keypad_queue.put(key)
-    print(f" Key Pressed: {key}")  # Debugging
-
-def wait_for_keypress():
-    """Wait for a key press and return its value."""
-    key = shared_keypad_queue.get()
-    return key
-
-def get_fine_amount(user_id):
-    """Retrieve the fine amount for a given user."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT SUM(fineAmount) FROM fines WHERE userId = ? AND paid = 0", (user_id,))
-    fine = cursor.fetchone()[0]  # Fetch the fine amount
-    conn.close()
-    return fine if fine else 0.0  # Return fine amount or 0 if none
-
-def main():
-    # Initialize hardware components
-    keypad_init(key_pressed)  # Assign callback function
-    keypad_thread = Thread(target=get_key, daemon=True)
-    keypad_thread.start()
-
-    lcd_display = lcd()
-    lcd_display.lcd_clear()
-    lcd_display.lcd_display_string("Welcome!", 1)
-    time.sleep(2)
-    lcd_display.lcd_clear()
-    lcd_display.lcd_display_string("Scan Your Card", 1)
-
-    user = scan_barcode()
-    
-    if user:
-        lcd_display.lcd_clear()
-        lcd_display.lcd_display_string(f"Hello, {user['name']}", 1)
-        time.sleep(2)
+def process_payment(barcode_id, amount):
+    """Process fine payment and update the user's payable fines."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT payableFines FROM users WHERE studentCardQR = ?", (barcode_id,))
+        result = cursor.fetchone()
         
-        fine_amount = get_fine_amount(user['id'])
-        lcd_display.lcd_clear()
-        lcd_display.lcd_display_string("Fine Amount:", 1)
-        lcd_display.lcd_display_string(f"${fine_amount:.2f}", 2)
-    else:
-        lcd_display.lcd_clear()
-        lcd_display.lcd_display_string("Invalid Card", 1)
-        time.sleep(2)
-        lcd_display.lcd_clear()
+        if not result:
+            return "User not found."
+        
+        current_fines = result[0]
+        if current_fines == 0:
+            return "No outstanding fines."
+        
+        if amount > current_fines:
+            return "Payment exceeds outstanding fines."
+        
+        new_fines = current_fines - amount
+        cursor.execute("UPDATE users SET payableFines = ? WHERE studentCardQR = ?", (new_fines, barcode_id))
+        conn.commit()
+        
+        return f"Payment successful. Remaining fines: {new_fines} SGD"
 
 if __name__ == "__main__":
-    main()
+    barcode_id = input("Enter Student Card QR Code: ")
+    action = input("Check fines or make payment? (check/pay): ").strip().lower()
+    
+    if action == "check":
+        fines = get_user_fines(barcode_id)
+        if fines is None:
+            print("User not found.")
+        else:
+            print(f"Outstanding fines: {fines} SGD")
+    elif action == "pay":
+        amount = float(input("Enter payment amount: "))
+        message = process_payment(barcode_id, amount)
+        print(message)
+    else:
+        print("Invalid action.")
