@@ -7,8 +7,8 @@ import atexit
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Secure session key
 
-DB_NAME = "/home/pi/ET0735/DCPE_2A_21_Group4/DCPE_2A_21_Group4/library.db"
-
+DB_NAME = "/home/pi/ET0735/DCPE_2A_21_Group4/DCPE_2A_21_Group4/library.db" #change again when in RPI
+ 
 lcd_process = subprocess.Popen(
     ["python3", "/home/pi/ET0735/DCPE_2A_21_Group4/DCPE_2A_21_Group4/src/lcd_menu.py"],
     stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
@@ -218,29 +218,20 @@ def borrow_book():
     data = request.get_json()
     user_id = session["user_id"]
     book_id = data.get("bookId")
+    isbn = data.get("isbn")  # ✅ Fix: Get ISBN from request
     branch = data.get("branch")
 
-    if not book_id or not branch:
-        return jsonify({"error": "Missing book ID or branch"}), 400
+    if not book_id or not branch or not isbn:
+        return jsonify({"error": "Missing book ID, branch, or ISBN"}), 400  # ✅ Ensure all fields exist
 
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # ✅ Check if the book is already borrowed by this user at the same branch
         cursor.execute("""
-            SELECT id FROM loans WHERE bookId = ? AND userId = ? AND returnDate IS NULL
-        """, (book_id, user_id))
-        existing_loan = cursor.fetchone()
-
-        if existing_loan:
-            return jsonify({"error": "You have already borrowed this book!"}), 409
-
-        # ✅ Insert into Loans table
-        cursor.execute("""
-            INSERT INTO loans (bookId, userId, borrowDate, branch, cancelStatus)
-            VALUES (?, ?, datetime('now'), ?, 'No')
-        """, (book_id, user_id, branch))
+        INSERT INTO loans (bookId, userId, isbn, borrowDate, branch, cancelStatus)
+        VALUES (?, ?, ?, datetime('now'), ?, 'No')
+    """, (book_id, user_id, isbn, branch))  # ✅ Now ISBN is included
 
         conn.commit()
         conn.close()

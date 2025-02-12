@@ -1,7 +1,7 @@
 import sqlite3
 import os
 
-DB_NAME = "/home/pi/ET0735/DCPE_2A_21_Group4/DCPE_2A_21_Group4/library.db"
+DB_NAME = "D:\GamayDCPE2A21_Group4\DCPE_2A_21_Group4\library.db"
 
 def get_db_connection():
     """Create and return a connection to the database."""
@@ -58,6 +58,7 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 bookId TEXT NOT NULL,
                 userId INTEGER NOT NULL,
+                isbn TEXT NOT NULL,
                 borrowDate TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 branch TEXT NOT NULL,
                 cancelStatus TEXT DEFAULT 'No',
@@ -77,7 +78,7 @@ def insert_books():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         books = [
-            ("10001", "The Hobbit", "J.R.R. Tolkien", "Fantasy", "978-0547928227", 
+            ("10001", "The Hobbit", "J.R.R. Tolkien", "Fantasy", "stu-24-00001", 
              "https://i.pinimg.com/736x/bc/e5/ee/bce5ee49b4ac62ac04624682d89c1973.jpg", "English", "Available", "A fantasy novel about Bilbo Baggins."),
             
             ("10002", "1984", "George Orwell", "Dystopian", "978-0451524935", 
@@ -130,6 +131,14 @@ def get_user_by_barcode(barcode_id):
         cursor.execute("SELECT * FROM users WHERE studentCardQR = ?", (barcode_id,))
         user = cursor.fetchone()
     return dict(user) if user else None
+
+def get_book_by_barcode(book_isbn):
+    """Retrieve book details using ISBN code."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM books WHERE isbn = ?", (book_isbn,))
+        book = cursor.fetchone()
+    return dict(book) if book else None
 
 if __name__ == "__main__":
     if not os.path.exists(DB_NAME):  # Only initialize if the DB doesn't exist
