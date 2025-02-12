@@ -14,6 +14,9 @@ def init_db():
     with get_db_connection() as conn:
         cursor = conn.cursor()
 
+        # Enable foreign key constraints
+        cursor.execute("PRAGMA foreign_keys = ON;")
+
         # Create Users Table with RFID ID
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
@@ -22,12 +25,16 @@ def init_db():
                 email TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
                 finNumber TEXT DEFAULT NULL,
-                studentCardQR TEXT DEFAULT NULL,
+                studentCardQR TEXT UNIQUE NOT NULL,
                 payableFines INTEGER DEFAULT 0,
                 rfid_id TEXT UNIQUE DEFAULT NULL,
                 createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+
+        # Index for faster lookup
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_email ON users (email);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_rfid ON users (rfid_id);")
 
         # Create Books Table
         cursor.execute('''
@@ -51,15 +58,15 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 bookId TEXT NOT NULL,
                 userId INTEGER NOT NULL,
-                borrowDate TEXT NOT NULL,
+                borrowDate TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 branch TEXT NOT NULL,
                 cancelStatus TEXT DEFAULT 'No',
                 dueDate TEXT DEFAULT NULL,
                 extendDate TEXT DEFAULT NULL,
                 extendStatus TEXT DEFAULT 'No',
                 returnDate TEXT DEFAULT NULL,
-                FOREIGN KEY (bookId) REFERENCES books (bookId),
-                FOREIGN KEY (userId) REFERENCES users (id)
+                FOREIGN KEY (bookId) REFERENCES books (bookId) ON DELETE CASCADE,
+                FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE
             )
         ''')
 
@@ -69,11 +76,7 @@ def insert_books():
     """Insert sample books manually into the books table."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-
-        cursor.executemany('''
-            INSERT OR IGNORE INTO books (bookId, title, author, genre, isbn, image, language, status, summary)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', [
+        books = [
             ("10001", "The Hobbit", "J.R.R. Tolkien", "Fantasy", "978-0547928227", 
              "https://i.pinimg.com/736x/bc/e5/ee/bce5ee49b4ac62ac04624682d89c1973.jpg", "English", "Available", "A fantasy novel about Bilbo Baggins."),
             
@@ -91,28 +94,46 @@ def insert_books():
             
             ("10006", "The Great Gatsby", "F. Scott Fitzgerald", "Classic", "978-0743273565", 
              "https://i.pinimg.com/736x/0e/d2/96/0ed296c2515faca99b63d2df238cf98a.jpg", "English", "Available", "A novel about wealth, love, and the American Dream.")
-        ])
-        
-        conn.commit()
+        ]
+
+        try:
+            cursor.executemany('''
+                INSERT OR IGNORE INTO books (bookId, title, author, genre, isbn, image, language, status, summary)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', books)
+            conn.commit()
+        except sqlite3.Error as e:
+            print(f"Error inserting books: {e}")
 
 def insert_users():
     """Insert predefined users into the users table."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        
-        cursor.executemany('''
-            INSERT OR IGNORE INTO users (name, email, password, finNumber, studentCardQR, payableFines, rfid_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', [
-            ("John Doe", "john.doe@example.com", "password123", "G1234567X", "QR123456", 1, "765343767958"),
-            ("Alice Smith", "alice.smith@example.com", "password456", "G7654321Y", "QR654321", 5, "765343767922"),
-            ("Bob Johnson", "bob.johnson@example.com", "password789", "F9876543Z", "QR987654", 10, "765343767933")
-        ])
-        
-        conn.commit()
+        users = [
+            ("John Doe", "john.doe@example.com", "password123", "G1234567X", "stu-24-00004", 1, "765343767958"),
+            ("Alice Smith", "alice.smith@example.com", "password456", "G7654321Y", "QR654321", 5, "1233333334"),
+            ("Bob Johnson", "bob.johnson@example.com", "password789", "F9876543Z", "QR987654", 10, "123123123234")
+        ]
+
+        try:
+            cursor.executemany('''
+                INSERT OR IGNORE INTO users (name, email, password, finNumber, studentCardQR, payableFines, rfid_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', users)
+            conn.commit()
+        except sqlite3.Error as e:
+            print(f"Error inserting users: {e}")
+def get_user_by_barcode(barcode_id):
+    """Retrieve user details using Student Card QR Code (barcode)."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE studentCardQR = ?", (barcode_id,))
+        user = cursor.fetchone()
+    return dict(user) if user else None
 
 if __name__ == "__main__":
     if not os.path.exists(DB_NAME):  # Only initialize if the DB doesn't exist
+        print("Initializing database...")
         init_db()
         insert_books()
         insert_users()
