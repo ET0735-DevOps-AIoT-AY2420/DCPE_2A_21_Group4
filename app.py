@@ -1,11 +1,36 @@
 from flask import Flask, request, render_template, redirect, url_for, flash, session, jsonify
 import sqlite3
 import os
+import subprocess
+import atexit
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Secure session key
 
 DB_NAME = "/home/pi/ET0735/DCPE_2A_21_Group4/DCPE_2A_21_Group4/library.db"
+
+lcd_process = subprocess.Popen(
+    ["python3", "/home/pi/ET0735/DCPE_2A_21_Group4/DCPE_2A_21_Group4/src/lcd_menu.py"],
+    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+)
+
+# Read LCD output periodically (for debugging)
+def check_lcd_output():
+    if lcd_process.poll() is None:
+        stdout, stderr = lcd_process.communicate(timeout=1)
+        print("LCD Output:", stdout)
+        print("LCD Errors:", stderr)
+
+
+# Function to stop the LCD menu subprocess
+def stop_lcd_menu():
+    if lcd_process.poll() is None:  # Check if the process is still running
+        lcd_process.terminate()  # Terminate the process
+        lcd_process.wait()  # Wait for the process to exit
+        print("LCD menu script stopped.")
+
+# Register the cleanup function to run when the Flask app exits
+atexit.register(stop_lcd_menu)
 
 def get_db_connection():
     """Create a new database connection."""
@@ -161,7 +186,6 @@ def additional_info():
 
     return render_template("additional_info.html")
 
-
 # ---------------------- MAIN PAGES ----------------------
 @app.route('/homepage')
 def homepage():
@@ -226,9 +250,6 @@ def borrow_book():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-
-
 @app.route("/userdashboard")
 def userdashboard():
     if "user_email" not in session:
@@ -236,6 +257,7 @@ def userdashboard():
         return redirect(url_for("signin"))
 
     return render_template("userdashboard.html", email=session["user_email"])
+
 @app.route("/view_users")
 def view_users():
     conn = sqlite3.connect(DB_NAME)
@@ -247,7 +269,6 @@ def view_users():
 
     return jsonify(users)
 
-
 @app.route("/view_loans")
 def view_loans():
     conn = sqlite3.connect(DB_NAME)
@@ -258,7 +279,6 @@ def view_loans():
     conn.close()
 
     return jsonify(loans)
-
 
 @app.route("/reserve_books", methods=["POST"])
 def reserve_books():
@@ -304,10 +324,6 @@ def reserve_books():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
-
-
 
 # ---------------------- RUN SERVER ----------------------
 if __name__ == '__main__':
