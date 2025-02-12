@@ -5,7 +5,7 @@ import os
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Secure session key
 
-DB_NAME = "library.db"
+DB_NAME = "/home/pi/ET0735/DCPE_2A_21_Group4/DCPE_2A_21_Group4/library.db"
 
 def get_db_connection():
     """Create a new database connection."""
@@ -187,7 +187,7 @@ def branch():
 
 @app.route("/borrow", methods=["POST"])
 def borrow_book():
-    """API to handle book borrowing."""
+    """API to handle book borrowing and prevent duplicate reservations."""
     if "user_id" not in session:
         return jsonify({"error": "User not logged in"}), 403
 
@@ -203,17 +203,19 @@ def borrow_book():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Check if the book is already borrowed
-        cursor.execute("SELECT * FROM loans WHERE bookId = ? AND userId = ?", (book_id, user_id))
+        # ✅ Check if the book is already borrowed by this user at the same branch
+        cursor.execute("""
+            SELECT id FROM loans WHERE bookId = ? AND userId = ? AND returnDate IS NULL
+        """, (book_id, user_id))
         existing_loan = cursor.fetchone()
 
         if existing_loan:
-            return jsonify({"error": "Book already borrowed"}), 409
+            return jsonify({"error": "You have already borrowed this book!"}), 409
 
-        # Insert into Loans table
+        # ✅ Insert into Loans table
         cursor.execute("""
-            INSERT INTO loans (bookId, userId, borrowDate, branch, cancelStatus, extendStatus)
-            VALUES (?, ?, datetime('now'), ?, 'No', 'No')
+            INSERT INTO loans (bookId, userId, borrowDate, branch, cancelStatus)
+            VALUES (?, ?, datetime('now'), ?, 'No')
         """, (book_id, user_id, branch))
 
         conn.commit()
@@ -222,8 +224,8 @@ def borrow_book():
         return jsonify({"success": "Book borrowed successfully!"})
 
     except Exception as e:
-        print("Error:", str(e))  # Debugging log
         return jsonify({"error": str(e)}), 500
+
 
 
 
@@ -260,7 +262,7 @@ def view_loans():
 
 @app.route("/reserve_books", methods=["POST"])
 def reserve_books():
-    """API to reserve books and store in the database."""
+    """API to reserve books and prevent duplicate reservations."""
     if "user_id" not in session:
         return jsonify({"error": "Please sign in to reserve books."}), 403
 
@@ -276,10 +278,24 @@ def reserve_books():
         cursor = conn.cursor()
 
         for book in borrowed_books:
-            cursor.execute(
-                "INSERT INTO loans (bookId, userId, branch, borrowDate, cancelStatus, extendStatus) VALUES (?, ?, ?, datetime('now'), 'No', 'No')",
-                (book["id"], user_id, book["branch"]),
-            )
+            book_id = book["id"]
+            branch = book["branch"]
+
+            # ✅ Check if the book is already reserved by this user
+            cursor.execute("""
+                SELECT id FROM loans WHERE bookId = ? AND userId = ? AND returnDate IS NULL
+            """, (book_id, user_id))
+            existing_reservation = cursor.fetchone()
+
+            if existing_reservation:
+                print(f"Skipping duplicate reservation for book {book_id}")
+                continue  # Skip duplicate reservation
+
+            # ✅ Reserve book and mark it as unavailable
+            cursor.execute("""
+                INSERT INTO loans (bookId, userId, branch, borrowDate, cancelStatus, extendStatus)
+                VALUES (?, ?, ?, datetime('now'), 'No', 'No')
+            """, (book_id, user_id, branch))
 
         conn.commit()
         conn.close()
@@ -288,6 +304,7 @@ def reserve_books():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 
 
