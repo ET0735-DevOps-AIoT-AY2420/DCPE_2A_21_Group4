@@ -4,45 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reserved Books</title>
-    <link rel="stylesheet" href="/static/css/menuBarStyle.css" type="text/css">
-    <link rel="stylesheet" href="/static/css/reservedStyle.css" type="text/css">
-
-    <!-- Font-family (Poppins) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-
-    <script src="/static/js/menuBar.js" defer></script>
-    <script src="/static/js/reserved.js" defer></script>
+    <link rel="stylesheet" href="/static/css/reservedStyle.css">
+    <script>
+        async function fetchReservedBooks() {
+            const userId = 1; // Replace with dynamic user ID
+            const response = await fetch(`/api/get_reserved_books?user_id=${userId}`);
+            const data = await response.json();
+            
+            const bookList = document.getElementById("reservedBooks");
+            bookList.innerHTML = "";
+            
+            if (data.error) {
+                bookList.innerHTML = `<p>${data.error}</p>`;
+                return;
+            }
+            
+            data.books.forEach(book => {
+                const bookItem = document.createElement("li");
+                bookItem.innerHTML = `${book.title} - ${book.author} <button onclick="cancelReservation(${book.bookId})">Cancel</button>`;
+                bookList.appendChild(bookItem);
+            });
+        }
+        
+        async function cancelReservation(bookId) {
+            const userId = 1; // Replace with dynamic user ID
+            const response = await fetch("/api/cancel_reservation", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ user_id: userId, book_id: bookId })
+            });
+            const data = await response.json();
+            alert(data.message);
+            fetchReservedBooks();
+        }
+        
+        window.onload = fetchReservedBooks;
+    </script>
 </head>
 <body>
-
-    <div class="menu-bar">
-        <div class="menu-items">
-            <a href="HomePage.html" class="menu-item active" id="home">Home</a> 
-            <a href="BorrowedBooks.html" class="menu-item" id="borrowedBooks">Borrowed Books</a>
-            <a href="UserDashboard.html" class="menu-item" id="userDashboard">User Dashboard</a>
-        </div>
-        <div class="menu-icons">
-            <a href="#" class="icon noti"> <i class="fa fa-bell-o"></i></a>
-            <a href="#" class="icon favorite"> <i class="fa fa-heart-o"></i></a>
-        </div>
-    </div> 
-
-    <div class="reservation-container">
-        <h2>Selected Branch: <span id="selected-branch">Branch 1</span></h2>
-        <h3>Book List:</h3>
-        
-        <div id="book-list" class="book-list"></div>
-
-        <div class="reserve-btn-container">
-            <button id="reserve-button" class="reserve-btn">Reserve</button>
-        </div>
-    </div>
-
+    <h1>Your Reserved Books</h1>
+    <ul id="reservedBooks"></ul>
 </body>
 </html>

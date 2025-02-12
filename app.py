@@ -10,6 +10,7 @@ app = Flask(__name__, static_folder='static', template_folder='templates')
 DB_NAME = "library.db"
 
 def get_db_connection():
+    """Establish a connection to the SQLite database."""
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
     return conn
@@ -17,27 +18,33 @@ def get_db_connection():
 # ---------------------- Serve Web Pages ----------------------
 @app.route('/')
 def home():
+    """Render the Home Page."""
     return render_template('HomePage.html')
 
 @app.route('/signin')
 def signin():
+    """Render the Sign-in Page."""
     return render_template('signin.html')
 
 @app.route('/signup')
 def signup():
+    """Render the Sign-up Page."""
     return render_template('signup.html')
 
 @app.route('/dashboard')
 def dashboard():
+    """Render the User Dashboard."""
     return render_template('userdashboard.html')
 
 @app.route('/reserve')
 def reserve_page():
+    """Render the Reserved Books Page."""
     return render_template('reserved.html')
 
 # ---------------------- API: Get Fine Amount ----------------------
 @app.route("/api/get_fine", methods=["GET"])
 def get_fine():
+    """Retrieve the fine amount for a specific user."""
     user_id = request.args.get("user_id")
     if not user_id:
         return jsonify({"error": "Missing user_id"}), 400
@@ -56,6 +63,7 @@ def get_fine():
 # ---------------------- API: Book Reservation ----------------------
 @app.route("/api/reserve", methods=["POST"])
 def reserve_book():
+    """Allow a user to reserve a book if they have no outstanding fines."""
     data = request.get_json()
     user_id = data.get("user_id")
     book_id = data.get("book_id")
@@ -90,6 +98,7 @@ def reserve_book():
 # ---------------------- API: Book Collection ----------------------
 @app.route("/api/collect", methods=["POST"])
 def collect_book():
+    """Allow a user to collect a reserved book."""
     data = request.get_json()
     user_id = data.get("user_id")
     book_id = data.get("book_id")
@@ -124,6 +133,7 @@ def collect_book():
 # ---------------------- API: Book Return ----------------------
 @app.route("/api/return", methods=["POST"])
 def return_book():
+    """Process the return of a borrowed book and calculate fines if overdue."""
     data = request.get_json()
     user_id = data.get("user_id")
     book_id = data.get("book_id")
