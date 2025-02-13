@@ -57,6 +57,7 @@ def init_db():
             CREATE TABLE IF NOT EXISTS loans (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 branchBookId INTEGER NOT NULL,
+                branchBookId INTEGER NOT NULL,
                 bookId TEXT NOT NULL,
                 userId INTEGER NOT NULL,
                 isbn TEXT NOT NULL,
@@ -68,6 +69,7 @@ def init_db():
                 extendStatus TEXT DEFAULT 'No',
                 returnDate TEXT DEFAULT NULL,
                 FOREIGN KEY (bookId) REFERENCES books (bookId) ON DELETE CASCADE,
+                FOREIGN KEY (branchBookId) REFERENCES branch_books (id) ON DELETE CASCADE,
                 FOREIGN KEY (branchBookId) REFERENCES branch_books (id) ON DELETE CASCADE,
                 FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE
             )
@@ -163,6 +165,108 @@ def get_book_by_barcode(book_isbn):
         cursor.execute("SELECT * FROM books WHERE isbn = ?", (book_isbn,))
         book = cursor.fetchone()
     return dict(book) if book else None
+
+def insert_branches():
+    """Insert sample branches."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        branches = [("Branch 1",), ("Branch 2",)]
+        cursor.executemany("INSERT OR IGNORE INTO branches (name) VALUES (?)", branches)
+        conn.commit()
+
+def insert_branch_books():
+    """Assign books to each branch."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM branches WHERE name = 'Branch 1'")
+        branch1_id = cursor.fetchone()[0]
+
+        cursor.execute("SELECT id FROM branches WHERE name = 'Branch 2'")
+        branch2_id = cursor.fetchone()[0]
+
+        cursor.execute("SELECT bookId FROM books")
+        books = cursor.fetchall()
+
+        branch_books = []
+        for book in books:
+            branch_books.append((branch1_id, book[0], "Available"))
+            branch_books.append((branch2_id, book[0], "Available"))
+
+        cursor.executemany('''
+            INSERT OR IGNORE INTO branch_books (branchId, bookId, status)
+            VALUES (?, ?, ?)
+        ''', branch_books)
+        conn.commit()
+
+def borrow_book(branch_id, book_id, user_id):
+    """Mark a book as borrowed in a specific branch."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        # Check if the book is available in the selected branch
+        cursor.execute('''
+            SELECT id FROM branch_books
+            WHERE branchId = ? AND bookId = ? AND status = 'Available'
+        ''', (branch_id, book_id))
+        branch_book = cursor.fetchone()
+
+        if branch_book:
+            branch_book_id = branch_book[0]
+
+            # Insert loan record
+            cursor.execute('''
+                INSERT INTO loans (branchBookId, userId, borrowDate)
+                VALUES (?, ?, CURRENT_TIMESTAMP)
+            ''', (branch_book_id, user_id))
+
+            # Mark book as unavailable in that branch
+            cursor.execute('''
+                UPDATE branch_books
+                SET status = 'Unavailable'
+                WHERE id = ?
+            ''', (branch_book_id,))
+            
+            conn.commit()
+            print("Book borrowed successfully!")
+        else:
+            print("Book is already borrowed in this branch.")
+
+def return_book(branch_id, book_id, user_id):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        # Check if the loan exists and hasn't been returned yet
+        cursor.execute('''
+            SELECT id FROM loans
+            WHERE branchBookId = (
+                SELECT id FROM branch_books
+                WHERE branchId = ? AND bookId = ?
+            ) AND userId = ? AND returnDate IS NULL
+        ''', (branch_id, book_id, user_id))
+        loan = cursor.fetchone()
+
+        if loan:
+            loan_id = loan[0]
+
+            # Update loan record with the return date
+            cursor.execute('''
+                UPDATE loans
+                SET returnDate = CURRENT_TIMESTAMP
+                WHERE id = ?
+            ''', (loan_id,))
+
+            # Mark the book as available again
+            cursor.execute('''
+                UPDATE branch_books
+                SET status = 'Available'
+                WHERE branchId = ? AND bookId = ?
+            ''', (branch_id, book_id))
+            
+            conn.commit()
+            print("Book returned successfully!")
+        else:
+            print("No active loan found for this book and user in the specified branch.")
+
 
 def insert_branches():
     """Insert sample branches."""
