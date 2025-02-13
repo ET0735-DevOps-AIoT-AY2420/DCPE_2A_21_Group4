@@ -5,29 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Library Book Reservation</title>
 
-    <!-- CSS Files -->
+    <!-- CSS files -->
     <link href="/static/css/menuBarStyle.css" type="text/css" rel="stylesheet">
     <link href="/static/css/HomePageStyle.css" type="text/css" rel="stylesheet">
-
-    <!-- Font (Poppins) -->
+    
+    <!-- Font-family (Poppins) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 
-    <!-- JavaScript -->
+    <!-- Scripts -->
     <script src="/static/js/menuBar.js" defer></script>
-    <script src="/static/js/HomePage.js" defer></script> <!-- Uses Flask Instead of Firebase -->
+    <script src="/static/js/HomePage.js" defer></script>
 </head>
 <body>
+    <!-- Menu Bar -->
     <div class="menu-bar">
         <div class="menu-items">
-            <a href="HomePage.html" class="menu-item active" id="home" onclick="activeTab(this)">Home</a> 
-            <a href="BorrowedBooks.html" class="menu-item" id="borrowedBooks" onclick="activeTab(this)">Borrowed Books</a>
-            <a href="userdashboard.html" class="menu-item" id="userDashboard" onclick="activeTab(this)">User Dashboard</a>
+            <a href="{{ url_for('homepage') }}" class="menu-item active" id="home" onclick="activeTab(this)">Home</a> 
+            <a href="{{ url_for('borrowed_books') }}" class="menu-item" id="borrowedBooks" onclick="activeTab(this)">Borrowed Books</a>
+            <a href="{{ url_for('userdashboard') }}" class="menu-item" id="userDashboard" onclick="activeTab(this)">User Dashboard</a>            
         </div>
         <div class="menu-icons">
             <a href="#" class="icon noti"> <i class="fa fa-bell-o" aria-hidden="true"></i></a>
@@ -35,6 +36,7 @@
         </div>
     </div> 
 
+    <!-- Search Section -->
     <div class="section1">
         <img src="/static/images/homepage-background.jpg" alt="Background" class="home-image">
         <div class="search-bar-container">
@@ -45,25 +47,55 @@
         </div>
     </div>
 
+    <!-- Recommended Books Section -->
     <div class="recommended-section">
         <h3 style="text-align: left;">Recommended</h3>
-        <div id="book-list" class="book-list"></div>
+        <div id="book-list" class="book-list">
+            {% if books %}
+                <ul>
+                    {% for book in books %}
+                        <li class="book-item">
+                            <img src="{{ book[0].image }}" alt="{{ book[0].title }}" class="book-image">
+                            <h4>{{ book[0].title }}</h4>
+                            <p>Author: {{ book[0].author }}</p>
+                            <p>Genre: {{ book[0].genre }}</p>
+                            <p>Status: {{ book['branch_status'] }}</p>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No books available for this branch.</p>
+            {% endif %}
+        </div>
         <div class="view-more">
-            <a href="viewmore.html" id="view-more">View More &gt;</a>
+            <a href="{{ url_for('viewmore') }}" id="view-more" onclick="viewMoreBooks()">View More &gt;</a>
         </div>
     </div>
 
+    <!-- Switch Branch Button -->
+    <div class="switch-branch-container">
+        <button id="switch-branch" onclick="switchBranch()">Switch Branch</button>
+    </div>
+
+    <div id="branch-id-container" data-branch-id="{{ branch_id }}"></div>
+
     <script>
-        // Store User ID in sessionStorage
+        // Get user ID from Flask session
         const userId = "{{ user_id }}";
 
+        // Store user ID in sessionStorage if it's valid
         if (userId && userId !== "None") {
             sessionStorage.setItem("userId", userId);
             console.log("User ID stored:", sessionStorage.getItem("userId"));
         } else {
             console.log("User is not logged in.");
         }
-    </script>
 
+        // Switch Branch Function
+        function switchBranch() {
+            sessionStorage.removeItem("selectedBranch"); 
+            window.location.href = "{{ url_for('selectBranch') }}"; 
+        }
+    </script>
 </body>
 </html>

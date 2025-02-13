@@ -1,47 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Library Management System</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book Info</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bistyle.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/menuBarStyle.css') }}">
 
-    <link rel="stylesheet" href="/static/css/vmstyle.css" type="text/css">
-    <link rel="stylesheet" href="/static/css/menuBarStyle.css" type="text/css">
+  <!-- Font-family (Poppins) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-    <!-- Font-family (Poppins) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-
-    <script src="/static/js/menuBar.js" defer></script>
-    <script src="/static/js/vmscript.js" defer></script> <!-- Updated to work with Flask -->
 </head>
 <body>
     <div class="menu-bar">
         <div class="menu-items">
-           <a href="HomePage.html" class="menu-item active" id="home">Home</a> 
-           <a href="BorrowedBooks.html" class="menu-item" id="borrowedBooks">Borrowed Books</a>
-           <a href="userdashboard.html" class="menu-item" id="userDashboard">User Dashboard</a>
+           <a href="{{ url_for('homepage') }}" class="menu-item active">Home</a> 
+           <a href="{{ url_for('viewmore') }}" class="menu-item">View More Books</a>
+           <a href="{{ url_for('userdashboard') }}" class="menu-item">User Dashboard</a>
         </div>
-        <div class="menu-icons">
-            <a href="#" class="icon noti"> <i class="fa fa-bell-o"></i></a>
-            <a href="#" class="icon favorite"> <i class="fa fa-heart-o"></i></a>
+    </div> 
+
+    <div class="book-container">
+        <div class="book-cover-container">
+            <img id="book-image" src="/static/images/default-book.jpg" alt="Book Cover" class="book-cover">
+            <button id="borrow-button" class="borrow-btn">Borrow</button>
+        </div>
+        <div class="book-details">
+            <h1 id="book-title">Loading...</h1>
+            <h3 id="book-author"></h3>
+            <p id="book-description"></p>
+            <p><strong>Genre:</strong> <span id="book-genre"></span></p>
+            <p><strong>Status:</strong> <span id="book-status"></span></p>
+            <p><strong>Language:</strong> <span id="book-language"></span></p>
+            
+            <!-- Favorite Button -->
+            <button id="favorite-btn" class="heart-button">
+                <i class="far fa-heart" id="favorite-icon"></i>
+            </button>
         </div>
     </div>
 
-    <nav>
-        <div class="search-box">
-            <span class="search-icon"><i class="fas fa-search"></i></span>
-            <input type="text" id="search" placeholder="Search Books by Title, Author, or Genre">
-        </div>
-    </nav>
-
-    <div id="book-container">
-        <div id="book-list"></div>
-    </div>    
+    <!-- 🔗 Link JavaScript File -->
+    <script src="{{ url_for('static', filename='js/biscript.js') }}" defer></script>
 </body>
 </html>
