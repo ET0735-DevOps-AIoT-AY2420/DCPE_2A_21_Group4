@@ -1,10 +1,9 @@
 from flask import Flask, request, render_template, redirect, url_for, flash, session, jsonify
-from database import borrow_book
+from database import get_db_connection
 import sqlite3
 import os
 import subprocess
 import atexit
-
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', os.urandom(24))
@@ -41,6 +40,50 @@ def get_db_connection():
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row  # Fetch results as dictionaries
     return conn
+
+# ---------------------- Borrow Book Func ----------------------
+
+def borrow_book(branch_bookId, book_id, user_id,isbn,branch_id):
+    """Mark a book as borrowed in a specific branch."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        print(f"Receiving Data: {branch_bookId},{book_id},{user_id},{isbn},{branch_id}")
+
+        # Check if the book is available in the selected branch
+        cursor.execute(''' 
+            SELECT id FROM branch_books
+            WHERE branchId = ? AND bookId = ? AND status = 'Available'
+        ''', (branch_id, book_id))
+        branch_book = cursor.fetchone()
+
+        if branch_book:
+            branch_book_id = branch_book[0]
+
+            # Insert a borrow request (status = 'pending')
+            cursor.execute('''
+                INSERT INTO loans (branchBookId,bookId, userId, isbn, borrowDate, branch, status)
+                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ? ,'pending')
+            ''', (branch_bookId, book_id, user_id, isbn, branch_id))
+
+            conn.commit()
+            print("Book borrow request added successfully!")
+            return "Borrow request created successfully."
+        else:
+            print("Book is already borrowed or not available in this branch.")
+            return "Book is already borrowed or not available."
+
+def get_book_isbn(book_id):
+    """Fetch ISBN of a book from the books table."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(''' 
+            SELECT isbn FROM books WHERE bookId = ?
+        ''', (book_id,))
+        result = cursor.fetchone()
+        if result:
+            return result[0]  # Return the ISBN
+        return None  # Return None if no ISBN is found
 
 # ---------------------- SIGN UP ----------------------
 @app.route("/", methods=["GET", "POST"])
@@ -200,33 +243,41 @@ def get_book_availability(book_id, branch_id):
         return jsonify({"error": str(e)}), 500
 
 # ---------------------- API: Borrow a Book ----------------------
-@app.route("/borrow", methods=["POST"])
+@app.route("/api/borrow_book", methods=["POST"])
 def borrow_book_api():
     """Mark a book as borrowed in a specific branch."""
     if "user_id" not in session:
         return jsonify({"error": "User not logged in"}), 403
-
+    
     data = request.get_json()
+    print(f"Received data: {data}")  # Log the received data
+
     user_id = session["user_id"]
-    book_id = data.get("bookId")
+    book_id = str(data.get("bookId"))
+    branch_bookId = data.get("bookId")
     branch_id = data.get("branchId")
 
-    if not book_id or not branch_id:
+   
+
+    if not book_id or not branch_bookId:
         return jsonify({"error": "Missing book ID or branch ID"}), 400
 
     try:
-        result = borrow_book(branch_id, book_id, user_id)
-        return jsonify({"success": result})
-
+        isbn = get_book_isbn(book_id)
+        if not isbn:
+            return jsonify({"error": "ISBN not found for the given book."}), 400
+        
+        print(f"Senting Data: {branch_bookId},{book_id},{user_id},{isbn},{branch_id}")
+        result = borrow_book(branch_bookId, book_id, user_id, isbn, branch_id)
+        if result:
+            return jsonify({"success": "Book borrow request created successfully."})
+        else:
+            return jsonify({"error": "Book is already borrowed or not available."}), 400
+        
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# ---------------------- BOOK INFO PAGE ----------------------
-@app.route("/bookinfo.html")
-def bookinfo():
-    """Book info page (loads data via API)."""
-    return render_template("bookinfo.html")
-
+        print(f"Error in borrow_book_api: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+    
 # ---------------------- Select branch ----------------------
 @app.route("/selectBranch", methods=["GET", "POST"])
 def selectBranch():
@@ -280,15 +331,165 @@ def homepage():
     books = cursor.fetchall()
     conn.close()
 
-    return render_template("homepage.html", branch_id=branch_id, user_id=user_id, books=books)
+    books_list = []
+    for book in books:
+        books_list.append({
+            "id":book[0],
+            "bookId": book[1],  
+            "title": book[2],    
+            "author": book[3],    
+            "genre": book[4],     
+            "isbn": book[5],      
+            "image": book[6],     
+            "language": book[7],  
+            "status": book[8],    
+            "summary": book[9] 
+        })
 
-@app.route('/viewmore')
+    return render_template("homepage.html", branch_id=branch_id, user_id=user_id, books=books_list)
+
+# ---------------------- View More ----------------------
+
+@app.route("/viewmore")
 def viewmore():
-    return render_template("viewmore.html")
+    """Render the viewmore page with books from the selected branch."""
+    
+    branch_id = session.get("branchId")
+    if not branch_id:
+        flash("Please select a branch first.", "warning")
+        return redirect(url_for("selectBranch"))
 
-@app.route('/reserved.html')
+   
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT books.*, branch_books.status AS branch_status
+        FROM books
+        INNER JOIN branch_books ON books.bookId = branch_books.bookId
+        WHERE branch_books.branchId = ?
+    ''', (branch_id,))
+    books = cursor.fetchall()
+    conn.close()
+
+    books_list = []
+    for book in books:
+        books_list.append({
+            "id":book[0],
+            "bookId": book[1],  
+            "title": book[2],    
+            "author": book[3],    
+            "genre": book[4],     
+            "isbn": book[5],      
+            "image": book[6],     
+            "language": book[7],  
+            "status": book[8],    
+            "summary": book[9] 
+        })
+
+    return render_template("viewmore.html", branch_id=branch_id, books=books_list)
+
+# ---------------------- BOOK INFO PAGE ----------------------
+@app.route("/bookinfo")
+def bookinfo():
+    """Book info page (loads data via API)."""
+    book_id = request.args.get('bookId')  # Get the book ID from the query parameter
+    branch_id = request.args.get('branchId')  # Get the branch ID from the query parameter
+    
+    if not book_id or not branch_id:
+        flash("Book or branch not selected.", "warning")
+        return redirect(url_for("homepage"))
+
+    # Fetch the book details based on book_id
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Fetch book details
+    cursor.execute('''SELECT * FROM books WHERE bookId = ?''', (book_id,))
+    book = cursor.fetchone()
+
+    if not book:
+        flash("Book not found.", "danger")
+        return redirect(url_for("viewmore"))
+
+    # Fetch book availability at the specific branch
+    cursor.execute('''SELECT status FROM branch_books WHERE bookId = ? AND branchId = ?''', (book_id, branch_id))
+    branch_book = cursor.fetchone()
+
+    conn.close()
+
+    if not branch_book:
+        flash("Book not available at this branch.", "danger")
+        return redirect(url_for("viewmore"))
+
+    # If book and availability at branch are found, pass them to the template
+    book_details = {
+        "id": book[0],
+        "bookId": book[1],  
+        "title": book[2],    
+        "author": book[3],    
+        "genre": book[4],     
+        "isbn": book[5],      
+        "image": book[6],     
+        "language": book[7],  
+        "status": book[8],    
+        "summary": book[9]  
+    }
+
+   
+    book_details['branch_status'] = branch_book[0]
+
+    user_id = session.get("user_id")
+
+    return render_template("bookinfo.html", book=book_details,user_id=user_id)
+
+
+
+@app.route('/api/reserved')
 def reserved():
-    return render_template("reserved.html")
+    """Display the reserved books for the current user."""
+    user_id = request.args.get('user_id')  # Get the user_id from the query parameter
+    branch_id = request.args.get('branchId')
+    
+    if  not user_id or not branch_id:
+        return redirect(url_for('signin'))  # Redirect to login if user_id is not provided
+    
+    try:
+        # Fetch the reserved books for the user from the loans table
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT b.bookId, b.title, b.author, b.image, l.status, l.branch 
+            FROM books b
+            INNER JOIN loans l ON b.bookId = l.bookId
+            WHERE l.userId = ? AND l.branch = ? AND l.status = 'pending'
+        ''', (user_id, branch_id))
+        reserved_books = cursor.fetchall()
+        conn.close()
+        
+        # Convert to JSON format
+        books_list = [
+            {"bookId": row[0], "title": row[1], "author": row[2],  "image": row[3], "status": row[4], "branch": row[5]}
+            for row in reserved_books
+        ]
+
+        return jsonify(books_list)  # Returns JSON data
+
+    except Exception as e:
+        print(f"Error fetching reserved books: {e}")
+        return jsonify({"error": "An error occurred while fetching reservations"}), 500
+    
+
+@app.route('/reserved')
+def reserved_page():
+    user_id = request.args.get('user_id')
+    branch_id = request.args.get('branchId')
+
+    if not user_id or not branch_id:
+        return redirect(url_for('signin'))  # Redirect to login if user_id or branch_id is not provided
+
+    return render_template('reserved.html', user_id=user_id, branch_id=branch_id)
+
+
 
 @app.route('/borrowed_books.html')
 def borrowed_books():
@@ -334,9 +535,76 @@ def view_loans():
 
     return jsonify(loans)
 
-@app.route("/reserve_books", methods=["POST"])
-def reserve_books():
-    """API to reserve books and prevent duplicate reservations."""
+@app.route("/api/borrowed_books", methods=["GET"])
+def get_borrowed_books():
+    """Fetch borrowed books for the current user."""
+    if "user_id" not in session:
+        return jsonify({"error": "User not logged in"}), 403
+
+    user_id = session["user_id"]
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''SELECT b.bookId, b.title, b.author, l.status FROM books b
+                          INNER JOIN loans l ON b.bookId = l.bookId
+                          WHERE l.userId = ? AND l.status = 'pending' ''', (user_id,))
+        borrowed_books = cursor.fetchall()
+        conn.close()
+
+        return jsonify([dict(zip([column[0] for column in cursor.description], row)) for row in borrowed_books])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/cancel_borrowed_book/<book_id>", methods=["POST"])
+def cancel_borrowed_book(book_id):
+    """Cancel the borrowed book."""
+    if "user_id" not in session:
+        return jsonify({"error": "User not logged in"}), 403
+
+    user_id = session["user_id"]
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Get branchBookId before deleting
+        cursor.execute("""
+            SELECT branchBookId FROM loans 
+            WHERE bookId = ? AND userId = ? AND status = 'pending'
+        """, (book_id, user_id))
+        branch_book = cursor.fetchone()
+
+        if not branch_book:
+            return jsonify({"error": "No pending loan found for this book."}), 400
+
+        branch_book_id = branch_book[0]
+
+        cursor.execute('''DELETE FROM loans WHERE bookId = ? AND userId = ? AND status = 'pending' ''', (book_id, user_id))
+
+        cursor.execute("""
+            SELECT COUNT(*) FROM loans 
+            WHERE bookId = ? AND (status = 'reserved' OR status = 'borrowed')
+        """, (book_id,))
+        active_loans = cursor.fetchone()[0]
+
+        # If no active loans or reservations exist, make the book "Available" again
+        if active_loans == 0:
+            cursor.execute("""
+                UPDATE branch_books 
+                SET status = 'Available' 
+                WHERE id = ?
+            """, (branch_book_id,))
+            
+        conn.commit()
+        conn.close()
+
+        return jsonify({"success": "Book cancelled successfully."})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/reserve_book", methods=["POST"])
+def reserve_book():
+    """API to reserve multiple books (max 10) and prevent duplicate reservations."""
     if "user_id" not in session:
         return jsonify({"error": "Please sign in to reserve books."}), 403
 
@@ -348,8 +616,13 @@ def reserve_books():
         if not borrowed_books:
             return jsonify({"error": "No books selected for reservation."}), 400
 
+        if len(borrowed_books) > 10:
+            return jsonify({"error": "You can reserve a maximum of 10 books at a time."}), 400
+
         conn = get_db_connection()
         cursor = conn.cursor()
+
+        reserved_count = 0
 
         for book in borrowed_books:
             book_id = book["id"]
@@ -357,7 +630,8 @@ def reserve_books():
 
             # Check if the book is already reserved by this user
             cursor.execute("""
-                SELECT id FROM loans WHERE bookId = ? AND userId = ? AND returnDate IS NULL
+                SELECT id FROM loans 
+                WHERE bookId = ? AND userId = ? AND status = 'reserved' AND returnDate IS NULL
             """, (book_id, user_id))
             existing_reservation = cursor.fetchone()
 
@@ -365,19 +639,32 @@ def reserve_books():
                 print(f"Skipping duplicate reservation for book {book_id}")
                 continue  # Skip duplicate reservation
 
-            # Reserve book and mark it as unavailable
+            # Reserve book and mark it as reserved
             cursor.execute("""
-                INSERT INTO loans (bookId, userId, branch, borrowDate, cancelStatus, extendStatus)
-                VALUES (?, ?, ?, datetime('now'), 'No', 'No')
-            """, (book_id, user_id, branch))
+                UPDATE loans
+                SET status = 'reserved'
+                WHERE bookId = ? AND userId = ? AND status = 'pending'
+            """, (book_id, user_id))
+
+            cursor.execute("""
+                UPDATE branch_books
+                SET status = 'Unavailable'
+                WHERE bookId = ? AND branchId = ? AND status = 'Available'
+            """, (book_id, branch))
+
+            reserved_count += 1
 
         conn.commit()
         conn.close()
 
-        return jsonify({"success": "Books successfully reserved!"})
+        if reserved_count == 0:
+            return jsonify({"error": "No new books were reserved. Check for duplicates or pending status."}), 400
+
+        return jsonify({"success": f"{reserved_count} books successfully reserved!"})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 # ---------------------- RUN SERVER ----------------------
 if __name__ == '__main__':
