@@ -21,7 +21,7 @@
     <div class="menu-bar">
         <div class="menu-items">
            <a href="{{ url_for('homepage') }}" class="menu-item active">Home</a> 
-           <a href="{{ url_for('viewmore') }}" class="menu-item">View More Books</a>
+           <a href="{{ url_for('viewmore') }}" class="menu-item">Borrowed Books</a>
            <a href="{{ url_for('userdashboard') }}" class="menu-item">User Dashboard</a>
         </div>
     </div> 
@@ -45,8 +45,4 @@
             </button>
         </div>
     </div>
-
-    <!-- 🔗 Link JavaScript File -->
-    <script src="{{ url_for('static', filename='js/biscript.js') }}" defer></script>
 </body>
-</html>
