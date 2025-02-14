@@ -24,14 +24,24 @@
 </head>
 <body>
 
-    <!-- Include the Menubar -->
-    {% include 'menubar.html' %}
+        <!-- Menu Bar -->
+        <div class="menu-bar">
+            <div class="menu-items">
+                <a href="{{ url_for('homepage') }}" class="menu-item active" id="home" onclick="activeTab(this)">Home</a> 
+                <a href="{{ url_for('borrowed_books') }}" class="menu-item" id="borrowedBooks" onclick="activeTab(this)">Borrowed Books</a>
+                <a href="{{ url_for('userdashboard') }}" class="menu-item" id="userDashboard" onclick="activeTab(this)">User Dashboard</a>            
+            </div>
+            <div class="menu-icons">
+                <a href="#" class="icon noti"> <i class="fa fa-bell-o" aria-hidden="true"></i></a>
+                <a href="#" class="icon favorite"> <i class="fa fa-heart-o" aria-hidden="true"></i></a>
+            </div>
+        </div> 
 
     <div class="container">
         <div class="stats">
             <div class="stat-box">
                 <h2>BORROWED BOOKS</h2>
-                <p>10</p>
+                <p>{{reservedCount}}</p>
             </div>
             <div class="stat-box">
                 <h2>CURRENT BOOKS</h2>
@@ -39,7 +49,7 @@
             </div>
             <div class="stat-box">
                 <h2>FINES</h2>
-                <p>$10</p>
+                <p>${{ user['payableFines'] }}</p>
             </div>
         </div>
 
@@ -72,13 +82,13 @@
             </div>
             <form id="user-info-form">
                 <label for="name"><strong>Name:</strong></label>
-                <input type="text" id="name" name="name" value="[Your Name]" disabled>
+                <input type="text" id="name" name="name" value="{{ user['name'] }}" disabled>
 
                 <label for="email"><strong>Email Address:</strong></label>
-                <input type="email" id="email" name="email" value="[Your Email]" disabled>
+                <input type="email" id="email" name="email" value="{{ user['email'] }}" disabled>
 
-                <label for="birthday"><strong>Birthday:</strong></label>
-                <input type="date" id="birthday" name="birthday" value="[Your Birthday]" disabled>
+                <label for="createdAt"><strong>Account Created:</strong></label>
+                <input type="text" id="createdAt" name="createdAt" value="{{ user['createdAt'] }}" disabled>
 
                 <button type="button" id="edit-button">Edit</button>
                 <button type="submit" id="save-button" style="display: none;">Save</button>
@@ -99,23 +109,16 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {% for book in returned_books %}
                     <tr>
-                        <td>Book ID</td>
-                        <td>Title</td>
-                        <td>Author</td>
-                        <td>Genre</td>
-                        <td>Borrowed Date</td>
-                        <td>Returned Date</td>
+                        <td>{{ book[0] }}</td>
+                        <td>{{ book[1] }}</td>
+                        <td>{{ book[2] }}</td>
+                        <td>{{ book[3] }}</td>
+                        <td>{{ book[4] }}</td>
+                        <td>{{ book[5] }}</td>
                     </tr>
-                    <tr>
-                        <td>Book ID</td>
-                        <td>Title</td>
-                        <td>Author</td>
-                        <td>Genre</td>
-                        <td>Borrowed Date</td>
-                        <td>Returned Date</td>
-                    </tr>
-                    <!-- Add more rows as needed -->
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
