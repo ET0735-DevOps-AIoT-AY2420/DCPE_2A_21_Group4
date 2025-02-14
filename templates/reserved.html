@@ -23,9 +23,9 @@
 
     <div class="menu-bar">
         <div class="menu-items">
-            <a href="homepage.html" class="menu-item active" id="home">Home</a> 
-            <a href="BorrowedBooks.html" class="menu-item" id="borrowedBooks">Borrowed Books</a>
-            <a href="UserDashboard.html" class="menu-item" id="userDashboard">User Dashboard</a>
+            <a href="{{ url_for('homepage') }}" class="menu-item active" id="home" onclick="activeTab(this)">Home</a> 
+            <a href="{{ url_for('borrowed_books') }}" class="menu-item" id="borrowedBooks" onclick="activeTab(this)">Borrowed Books</a>
+            <a href="{{ url_for('userdashboard') }}" class="menu-item" id="userDashboard" onclick="activeTab(this)">User Dashboard</a>            
         </div>
         <div class="menu-icons">
             <a href="#" class="icon noti"> <i class="fa fa-bell-o"></i></a>
