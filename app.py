@@ -507,11 +507,39 @@ def branch():
 
 @app.route("/userdashboard")
 def userdashboard():
-    if "user_email" not in session:
-        flash("Please sign in to access your dashboard.", "danger")
-        return redirect(url_for("signin"))
+    user_id = session.get('user_id')  # Get the logged-in user ID from session
+    if not user_id:
+        return "User not logged in", 401  # Handle unauthenticated users
 
-    return render_template("userdashboard.html", email=session["user_email"])
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT name, email, createdAt, payableFines FROM users WHERE id = ?", (user_id,))
+    user = cursor.fetchone()
+
+    cursor.execute("""
+        SELECT COUNT(*) FROM loans 
+        WHERE userId = ? AND status = 'reserved'
+    """, (user_id,))
+    reservedCount = cursor.fetchone()[0]  # Get count of reserved books
+
+    cursor.execute("""
+        SELECT loans.bookId, books.title, books.author, books.genre, 
+               loans.borrowDate, loans.returnDate
+        FROM loans 
+        JOIN books ON loans.bookId = books.bookId
+        WHERE loans.userId = ? AND loans.status = 'returned'
+        ORDER BY loans.returnDate DESC
+    """, (user_id,))
+
+    returned_books = cursor.fetchall()
+
+
+    conn.close()
+
+    if user:
+        return render_template('userdashboard.html', user=user, reservedCount=reservedCount, returned_books=returned_books)
+    else:
+        return "User not found", 404
 
 @app.route("/view_users")
 def view_users():
@@ -593,7 +621,7 @@ def cancel_borrowed_book(book_id):
                 SET status = 'Available' 
                 WHERE id = ?
             """, (branch_book_id,))
-            
+
         conn.commit()
         conn.close()
 
