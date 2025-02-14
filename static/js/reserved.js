@@ -1,103 +1,158 @@
 document.addEventListener("DOMContentLoaded", async () => {
-    const bookListContainer = document.getElementById("book-list");
-    const selectedBranch = sessionStorage.getItem("selectedBranch");
-    const borrowedBooks = JSON.parse(sessionStorage.getItem("borrowedBooks")) || [];
-    const userId = sessionStorage.getItem("userId");
+    function getUserId() {
+        return sessionStorage.getItem("userId");
+    }
 
-    // Ensure the user is logged in
+    function getBranchIdFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get("branchId");
+    }
+
+    const userId = getUserId();
+    const branchId = getBranchIdFromURL();
+
     if (!userId) {
-        alert("You must be logged in to reserve books.");
-        window.location.href = "/signin";  // Redirect to login page
+        alert("⚠️ You must be logged in to view reservations.");
+        window.location.href = "/signin";
         return;
     }
 
-    if (!selectedBranch || borrowedBooks.length === 0) {
-        alert("No books or branch selected. Redirecting to homepage.");
-        window.location.href = "/HomePage.html";
+    if (!branchId) {
+        alert("⚠️ No branch selected. Redirecting to homepage.");
+        window.location.href = "/homepage";
         return;
     }
 
-    document.getElementById("selected-branch").textContent = selectedBranch;
+    // Fetch reserved books from the database
+    try {
+        const response = await fetch(`/api/reserved?user_id=${userId}&branchId=${branchId}`);
+        if (!response.ok) {
+            throw new Error(`Server Error: ${await response.text()}`);
+        }
 
-    for (let book of borrowedBooks) {
-        addBookToUI(book.id, book);
+        const reservedBooks = await response.json();
+        if (reservedBooks.length === 0) {
+            alert("⚠️ No reserved books found.");
+        } else {
+            reservedBooks.forEach(addBookToUI);
+        }
+    } catch (error) {
+        console.error("❌ Error fetching reserved books:", error);
+        alert("❌ Failed to fetch reserved books. Please try again.");
     }
+
+    // Attach event listener to reserve button
+    document.getElementById("reserve-button").addEventListener("click", reserveBooks);
 });
 
-// Add book to UI
-function addBookToUI(bookId, bookData) {
+// Function to add book details to UI
+function addBookToUI(bookData) {
     const bookListContainer = document.getElementById("book-list");
 
     const bookItem = document.createElement("div");
     bookItem.classList.add("book-item");
+    bookItem.dataset.bookId = bookData.bookId;
 
     const bookImage = document.createElement("img");
-    bookImage.src = bookData.book.image.startsWith("http") ? bookData.book.image : `${bookData.book.image}`;
-    bookImage.alt = bookData.book.title || "No Title";
+    bookImage.src = bookData.image && (bookData.image.startsWith("http") || bookData.image.startsWith("https"))
+        ? bookData.image
+        : `/static/images/${bookData.image || "default-book.jpg"}`;
+    bookImage.alt = bookData.title || "No Title";
 
+    const bookDetails = document.createElement("div");
+    bookDetails.classList.add("book-details");
+    bookDetails.innerHTML = `
+        <p><strong>Title:</strong> ${bookData.title}</p>
+        <p><strong>Author:</strong> ${bookData.author}</p>
+        <p><strong>Branch:</strong> ${bookData.branch}</p>
+    `;
+
+    // Create "Remove" button
     const removeButton = document.createElement("button");
-    removeButton.textContent = "❌";
+    removeButton.textContent = "❌ Remove";
     removeButton.classList.add("remove-button");
-    removeButton.addEventListener("click", () => {
-        removeBookFromList(bookId);
+    removeButton.addEventListener("click", async () => {
+        const bookId = bookItem.dataset.bookId;
+        await removeBookFromList(bookId, bookItem);
     });
 
     bookItem.appendChild(bookImage);
+    bookItem.appendChild(bookDetails);
     bookItem.appendChild(removeButton);
     bookListContainer.appendChild(bookItem);
 }
 
-// Remove book from session storage
-function removeBookFromList(bookId) {
-    let borrowedBooks = JSON.parse(sessionStorage.getItem("borrowedBooks")) || [];
-    borrowedBooks = borrowedBooks.filter(book => book.id !== bookId);
-    sessionStorage.setItem("borrowedBooks", JSON.stringify(borrowedBooks));
-    location.reload();
-}
-
-// **Reserve Books in SQLite**
-document.getElementById("reserve-button").addEventListener("click", async () => {
-    const borrowedBooks = JSON.parse(sessionStorage.getItem("borrowedBooks")) || [];
+// Function to reserve selected books
+async function reserveBooks() {
     const userId = sessionStorage.getItem("userId");
-
     if (!userId) {
         alert("⚠️ You must be logged in to reserve books.");
         return;
     }
 
-    if (borrowedBooks.length === 0) {
+    const selectedBooks = [];
+    document.querySelectorAll(".book-item").forEach((bookItem) => {
+        const bookId = bookItem.dataset.bookId;
+        const branch = bookItem.querySelector(".book-details p:nth-child(3)").textContent.split(": ")[1];
+
+        selectedBooks.push({ id: bookId, branch: branch });
+    });
+
+    if (selectedBooks.length === 0) {
         alert("⚠️ No books selected for reservation.");
         return;
     }
 
-    try {
-        console.log("📡 Sending reservation request:", borrowedBooks);
+    if (selectedBooks.length > 10) {
+        alert("⚠️ You can only reserve up to 10 books.");
+        return;
+    }
 
-        const response = await fetch("/reserve_books", {
+    try {
+        const response = await fetch("/api/reserve_book", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ borrowedBooks }),
+            body: JSON.stringify({ borrowedBooks: selectedBooks })
         });
 
+        const result = await response.json();
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Server Error: ${errorText}`);
+            throw new Error(result.error);
         }
+
+        alert("✅ " + result.success);
+        window.location.reload();
+    } catch (error) {
+        console.error("❌ Error reserving books:", error);
+        alert("❌ Failed to reserve books. Please try again.");
+    }
+}
+
+
+// Function to remove book from list and call API
+async function removeBookFromList(bookId, bookItem) {
+    if (!confirm("Are you sure you want to cancel this book?")) return;
+
+    const userId = sessionStorage.getItem("userId"); 
+
+    try {
+        const response = await fetch(`/api/cancel_borrowed_book/${bookId}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ userId }) 
+        });
 
         const result = await response.json();
-
-        if (result.success) {
-            console.log("✅ Reservation successful:", result);
-            alert("✅ Books reserved successfully!");
-            sessionStorage.removeItem("borrowedBooks");
-            window.location.href = "/homepage";
-        } else {
-            console.error(" Reservation failed:", result.error);
-            alert(" Failed to reserve books: " + result.error);
+        if (!response.ok) {
+            throw new Error(result.error);
         }
 
+        alert("✅ " + result.success);
+        bookItem.remove(); // Remove from UI after successful cancelation
     } catch (error) {
-        console.error("Error reserving books:", error);
-        alert("Failed to reserve books. Please try again.");
+        console.error("❌ Error canceling book:", error);
+        alert("❌ Failed to cancel the book. Please try again.");
     }
-});
+}
