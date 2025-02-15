@@ -29,7 +29,8 @@
             <div class="menu-items">
                 <a href="{{ url_for('homepage') }}" class="menu-item active" id="home" onclick="activeTab(this)">Home</a> 
                 <a href="{{ url_for('borrowed_books') }}" class="menu-item" id="borrowedBooks" onclick="activeTab(this)">Borrowed Books</a>
-                <a href="{{ url_for('userdashboard') }}" class="menu-item" id="userDashboard" onclick="activeTab(this)">User Dashboard</a>            
+                <a href="{{ url_for('userdashboard') }}" class="menu-item" id="userDashboard" onclick="activeTab(this)">User Dashboard</a>    
+                <a href="{{ url_for('signup') }}" class="logout-button">Logout</a>        
             </div>
             <div class="menu-icons">
                 <a href="#" class="icon noti"> <i class="fa fa-bell-o" aria-hidden="true"></i></a>
@@ -43,10 +44,7 @@
                 <h2>BORROWED BOOKS</h2>
                 <p>{{reservedCount}}</p>
             </div>
-            <div class="stat-box">
-                <h2>CURRENT BOOKS</h2>
-                <p>10</p>
-            </div>
+         
             <div class="stat-box">
                 <h2>FINES</h2>
                 <p>${{ user['payableFines'] }}</p>
@@ -95,33 +93,6 @@
             </form>
         </div>
 
-        <div class="returned-books">
-            <h2>Returned Books</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Book ID</th>
-                        <th>Title</th>
-                        <th>Author</th>
-                        <th>Genre</th>
-                        <th>Borrowed Date</th>
-                        <th>Returned Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for book in returned_books %}
-                    <tr>
-                        <td>{{ book[0] }}</td>
-                        <td>{{ book[1] }}</td>
-                        <td>{{ book[2] }}</td>
-                        <td>{{ book[3] }}</td>
-                        <td>{{ book[4] }}</td>
-                        <td>{{ book[5] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
     </div>
 
     <!-- Popup Modal -->

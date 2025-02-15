@@ -1,7 +1,7 @@
 import sqlite3
 import os
 
-DB_NAME = "C:\lee\DCPE_2A_21_Group4\library.db"
+DB_NAME = "/home/pi/ET0735/DCPE_2A_21_Group4/DCPE_2A_21_Group4/library.db"
 
 def get_db_connection():
     """Create and return a connection to the database."""

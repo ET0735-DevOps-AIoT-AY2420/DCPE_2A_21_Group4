@@ -112,7 +112,7 @@ async function reserveBooks() {
         const response = await fetch("/api/reserve_book", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ borrowedBooks: selectedBooks })
+            body: JSON.stringify({selectedBooks: selectedBooks })
         });
 
         const result = await response.json();
@@ -121,7 +121,9 @@ async function reserveBooks() {
         }
 
         alert("✅ " + result.success);
-        window.location.reload();
+        window.location.href="/borrowedBooks.html";
+        
+        
     } catch (error) {
         console.error("❌ Error reserving books:", error);
         alert("❌ Failed to reserve books. Please try again.");

@@ -13,6 +13,9 @@ from barcode_scanner import scan_barcode
 from hal.hal_rfid_reader import SimpleMFRC522
 from database import get_db_connection
 
+print("Displaying message...", flush=True)
+
+
 # 🔄 Queue for keypad input
 shared_keypad_queue = queue.Queue()
 current_user_id = None  # Store authenticated user ID

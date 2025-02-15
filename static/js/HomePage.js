@@ -68,6 +68,8 @@ document.addEventListener("DOMContentLoaded", function () {
         booksToDisplay.forEach(book => {
             const bookItem = document.createElement('div');
             bookItem.classList.add('book-item');
+
+            bookItem.dataset.bookId = book.bookId;
     
             const bookImage = document.createElement('img');
             bookImage.src = book.image && (book.image.startsWith("http") || book.image.startsWith("https"))
@@ -78,9 +80,13 @@ document.addEventListener("DOMContentLoaded", function () {
             const bookTitle = document.createElement('p');
             bookTitle.style.fontSize = "20px";
             bookTitle.textContent = book.title;
-    
+
             bookItem.addEventListener('click', () => {
-                window.location.href = `/bookinfo/${book.bookId}`;
+                const bookId = bookItem.dataset.bookId; 
+       
+                sessionStorage.setItem('selectedBookId', bookId);
+       
+                window.location.href = `/bookinfo?bookId=${bookId}&branchId=${branchId}`;
             });
     
             bookItem.appendChild(bookImage);
