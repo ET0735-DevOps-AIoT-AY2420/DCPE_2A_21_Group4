@@ -134,143 +134,172 @@ def main():
                     time.sleep(2)
                     continue  # Retry
 
-                lcd_display.lcd_clear()
-                lcd_display.lcd_display_string("1Collect 2Return", 1)
-                lcd_display.lcd_display_string("3Payment 4Exit", 2)
-                print(f" User authenticated (ID: {current_user_id}). Options displayed.")
-                
-                # Wait until the user responds
-                while shared_keypad_queue.empty():
-                    time.sleep(0.1)  # Avoid excessive CPU usage
-
-                key = shared_keypad_queue.get()
-                print(f" User selected option: {key}")
-
-                if key == "1":  # Collect Book Process
+                while True:  # Main menu loop
                     lcd_display.lcd_clear()
-                    print(" Waiting for book code entry...")
-                    book_code = wait_for_book_code()  # ✅ Collect full book code
-                    print(f" Book Code Entered: {book_code}")  # Debugging
-
-                    if verify_book_code(book_code, user.get('data', {}).get('id')):
-                        lcd_display.lcd_display_string("Book Dispensing", 1)
-
-                        GPIO.setup(26, GPIO.OUT)  # ✅ Ensure GPIO 26 is still set as output before using servo
-                        set_servo_position(90)  # ✅ Unlock book compartment
-                        time.sleep(3)
-                        set_servo_position(0)  # ✅ Lock again
-                        lcd_display.lcd_clear()
-                        lcd_display.lcd_display_string("Take Your Book", 1)
-                        time.sleep(3)
-                        lcd_display.lcd_display_string("Book Dispensed", 1)
-                        time.sleep(2)
-                        lcd_display.lcd_clear()
-                    else:
-                        lcd_display.lcd_display_string("Invalid Book Code", 1)
-                        time.sleep(2)
-                        lcd_display.lcd_clear()
-
-                if key == "2":  # Return Book Process
-                    print("📖 User selected RETURN BOOK.")
-                    lcd_display.lcd_clear()
-                    lcd_display.lcd_display_string("Scan Book Code", 1)
-                    time.sleep(1)  # ✅ Allow message display
+                    lcd_display.lcd_display_string("1Collect 2Return", 1)
+                    lcd_display.lcd_display_string("3Payment 4Exit", 2)
+                    print(f" User authenticated (ID: {current_user_id}). Options displayed.")
                     
-                    book_isbn = scan_barcode()
-                    print(f"📚 Scanned Book ISBN: {book_isbn}")
-                    
-                    if verify_and_remove_loan(book_isbn, current_user_id):
-                        print(f"✅ Valid Loan Found for Book: {book_isbn}")
+                    # Wait until the user responds
+                    while shared_keypad_queue.empty():
+                        time.sleep(0.1)  # Avoid excessive CPU usage
+
+                    key = shared_keypad_queue.get()
+                    print(f" User selected option: {key}")
+
+                    if key == "1":  # Collect Book Process
                         lcd_display.lcd_clear()
-                        lcd_display.lcd_display_string("Returning Book", 1)
-                        time.sleep(2)  # ✅ Allow display
-                        
-                        set_servo_position(90)  # ✅ Unlock book return slot
-                        time.sleep(3)
-                        set_servo_position(0)  # ✅ Lock again
-                        
-                        lcd_display.lcd_clear()
-                        lcd_display.lcd_display_string("Return Successful", 1)
-                    else:
-                        print(" Invalid Loan or No Loan Found.")
-                        lcd_display.lcd_clear()
-                        lcd_display.lcd_display_string("Invalid Loan", 1)
-                    
-                    time.sleep(2)
-                
+                        print(" Waiting for book code entry...")
+                        book_code = wait_for_book_code()  # ✅ Collect full book code
+                        print(f" Book Code Entered: {book_code}")  # Debugging
 
-                if key == "3":  # Payment Process
-                    print("💰 User selected PAYMENT.")
-                    lcd_display.lcd_clear()
-                    lcd_display.lcd_display_string("Checking Fines...", 1)
-                    time.sleep(1)
+                        if verify_book_code(book_code, user.get('data', {}).get('id')):
+                            lcd_display.lcd_display_string("Book Dispensing", 1)
 
-                    conn = get_db_connection()
-                    cursor = conn.cursor()
-                    
-                    # ✅ Use authenticated user's ID to check fines
-                    cursor.execute("SELECT payableFines FROM users WHERE id = ?", (current_user_id,))
-                    result = cursor.fetchone()
-                    
-                    if result and result[0] > 0:
-                        fine_amount = result[0]
-                        print(f"💰 User has ${fine_amount:.2f} in fines.")
-                        lcd_display.lcd_clear() 
-                        lcd_display.lcd_display_string(f"Fine: ${fine_amount:.2f}", 1)
-                        lcd_display.lcd_display_string("1: Pay | 2: Exit", 2)
-
-                        while shared_keypad_queue.empty():
-                            time.sleep(0.1)  # Wait for user input
-
-                        pay_key = shared_keypad_queue.get()
-                        if pay_key == "1":  # User chooses to pay
-                            print("📌 Scan to Pay:")
+                            GPIO.setup(26, GPIO.OUT)  # ✅ Ensure GPIO 26 is still set as output before using servo
+                            set_servo_position(90)  # ✅ Unlock book compartment
+                            time.sleep(3)
+                            set_servo_position(0)  # ✅ Lock again
                             lcd_display.lcd_clear()
-                            lcd_display.lcd_display_string("Scan to Pay:", 1)
-
-                            # ✅ Initiate RFID reader and wait for scan
-                            scanned_rfid = None
-                            while not scanned_rfid:
-                                scanned_rfid, _ = reader.read()  # Read RFID tag
-
-                            print(f"RFID Scanned: {scanned_rfid}")
-
-                            # ✅ Display processing for 2 seconds
-                            print("💳 Processing payment...")
-                            lcd_display.lcd_clear()
-                            lcd_display.lcd_display_string("Processing...", 1)
+                            lcd_display.lcd_display_string("Take Your Book", 1)
+                            time.sleep(3)
+                            lcd_display.lcd_display_string("Book Dispensed", 1)
                             time.sleep(2)
-
-                            # ✅ Update fines using authenticated user's ID
-                            cursor.execute("UPDATE users SET payableFines = 0 WHERE id = ?", (current_user_id,))
-                            conn.commit()
-
-                            print("✅ Payment Successful.")
                             lcd_display.lcd_clear()
-                            lcd_display.lcd_display_string("Payment Successful", 1)
                         else:
-                            print("❌ Payment Canceled.")
+                            lcd_display.lcd_display_string("Invalid Book Code", 1)
+                            time.sleep(2)
                             lcd_display.lcd_clear()
-                            lcd_display.lcd_display_string("Payment Canceled", 1)
-                    else:
-                        print("✅ No outstanding fines.")
-                        lcd_display.lcd_clear()
-                        lcd_display.lcd_display_string("No Fines Due", 1)
-                    
-                    conn.close()
-                    time.sleep(2)  # Allow time to display message
 
-                if key == "4":  # Exit Process
-                    print("🚪 User selected EXIT.")
-                    lcd_display.lcd_clear()
-                    lcd_display.lcd_display_string("Exiting...", 1)
-                    time.sleep(2)
-                    lcd_display.lcd_clear()
-                    lcd_display.lcd_display_string("Session Ended", 1)
-                    time.sleep(2)
-                    lcd_display.lcd_clear()
-                    current_user_id = None  # Reset user session
-                    continue  # Return to the main loop
+                        # Exit option after Collect
+                        lcd_display.lcd_display_string("Press # to Exit", 2)
+                        while True:
+                            if not shared_keypad_queue.empty():
+                                exit_key = shared_keypad_queue.get()
+                                if exit_key == "#":
+                                    break  # Exit Collect process and return to main menu
+
+                    if key == "2":  # Return Book Process
+                        print("📖 User selected RETURN BOOK.")
+                        lcd_display.lcd_clear()
+                        lcd_display.lcd_display_string("Scan Book Code", 1)
+                        time.sleep(1)  # ✅ Allow message display
+                        
+                        book_isbn = scan_barcode()
+                        print(f"📚 Scanned Book ISBN: {book_isbn}")
+                        
+                        if verify_and_remove_loan(book_isbn, current_user_id):
+                            print(f"✅ Valid Loan Found for Book: {book_isbn}")
+                            lcd_display.lcd_clear()
+                            lcd_display.lcd_display_string("Returning Book", 1)
+                            time.sleep(2)  # ✅ Allow display
+                            
+                            set_servo_position(90)  # ✅ Unlock book return slot
+                            time.sleep(3)
+                            set_servo_position(0)  # ✅ Lock again
+                            
+                            lcd_display.lcd_clear()
+                            lcd_display.lcd_display_string("Return Successful", 1)
+                        else:
+                            print(" Invalid Loan or No Loan Found.")
+                            lcd_display.lcd_clear()
+                            lcd_display.lcd_display_string("Invalid Loan", 1)
+                        
+                        time.sleep(2)
+
+                        # Exit option after Return
+                        lcd_display.lcd_display_string("Press # to Exit", 2)
+                        while True:
+                            if not shared_keypad_queue.empty():
+                                exit_key = shared_keypad_queue.get()
+                                if exit_key == "#":
+                                    break  # Exit Return process and return to main menu
+
+                    if key == "3":  # Payment Process
+                        print("💰 User selected PAYMENT.")
+                        lcd_display.lcd_clear()
+                        lcd_display.lcd_display_string("Checking Fines...", 1)
+                        time.sleep(1)
+
+                        conn = get_db_connection()
+                        cursor = conn.cursor()
+                        
+                        # ✅ Use authenticated user's ID to check fines
+                        cursor.execute("SELECT payableFines FROM users WHERE id = ?", (current_user_id,))
+                        result = cursor.fetchone()
+                        
+                        if result and result[0] > 0:
+                            fine_amount = result[0]
+                            print(f"💰 User has ${fine_amount:.2f} in fines.")
+                            lcd_display.lcd_clear() 
+                            lcd_display.lcd_display_string(f"Fine: ${fine_amount:.2f}", 1)
+                            lcd_display.lcd_display_string("1: Pay | 2: Exit", 2)
+
+                            while shared_keypad_queue.empty():
+                                time.sleep(0.1)  # Wait for user input
+
+                            pay_key = shared_keypad_queue.get()
+                            if pay_key == "1":  # User chooses to pay
+                                print("📌 Scan to Pay:")
+                                lcd_display.lcd_clear()
+                                lcd_display.lcd_display_string("Scan to Pay:", 1)
+
+                                # ✅ Initiate RFID reader and wait for scan
+                                scanned_rfid = None
+                                while not scanned_rfid:
+                                    scanned_rfid, _ = reader.read()  # Read RFID tag
+
+                                print(f"RFID Scanned: {scanned_rfid}")
+
+                                # ✅ Display processing for 2 seconds
+                                print("💳 Processing payment...")
+                                lcd_display.lcd_clear()
+                                lcd_display.lcd_display_string("Processing...", 1)
+                                time.sleep(2)
+
+                                # ✅ Update fines using authenticated user's ID
+                                cursor.execute("UPDATE users SET payableFines = 0 WHERE id = ?", (current_user_id,))
+                                conn.commit()
+
+                                print("✅ Payment Successful.")
+                                lcd_display.lcd_clear()
+                                lcd_display.lcd_display_string("Payment Successful", 1)
+                            else:
+                                print("❌ Payment Canceled.")
+                                lcd_display.lcd_clear()
+                                lcd_display.lcd_display_string("Payment Canceled", 1)
+                        else:
+                            print("✅ No outstanding fines.")
+                            lcd_display.lcd_clear()
+                            lcd_display.lcd_display_string("No Fines Due", 1)
+                        
+                        conn.close()
+                        time.sleep(2)  # Allow time to display message
+
+                        # Exit option after Payment
+                        lcd_display.lcd_display_string("Press # to Exit", 2)
+                        while True:
+                            if not shared_keypad_queue.empty():
+                                exit_key = shared_keypad_queue.get()
+                                if exit_key == "#":
+                                    break  # Exit Payment process and return to main menu
+
+                    if key == "4":  # Exit Process
+                        print("🚪 User selected EXIT.")
+                        lcd_display.lcd_clear()
+                        lcd_display.lcd_display_string("Exiting...", 1)
+                        time.sleep(2)
+                        lcd_display.lcd_clear()
+                        lcd_display.lcd_display_string("Session Ended", 1)
+                        time.sleep(2)
+                        lcd_display.lcd_clear()
+                        current_user_id = None  # Reset user session
+                        lcd_display.lcd_clear()
+                        lcd_display.lcd_display_string("System Ready", 1)
+                        time.sleep(2)  # ✅ Allow LCD to show the message
+    
+                        print(" System ready... Waiting for user presence.")
+                        break  # Exit the main menu loop
 
             else:
                 print("No user detected. Returning to idle state.")
