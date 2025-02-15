@@ -1,7 +1,7 @@
 import sqlite3
 import os
 
-DB_NAME = "/home/pi/ET0735/DCPE_2A_21_Group4/DCPE_2A_21_Group4/library.db"
+DB_NAME = "C:\lee\DCPE_2A_21_Group4\library.db"
 
 def get_db_connection():
     """Create and return a connection to the database."""
@@ -102,23 +102,38 @@ def insert_books():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         books = [
-            ("10001", "The Hobbit", "J.R.R. Tolkien", "Fantasy", "stu-24-00001", 
+            ("10001", "The Hobbit", "J.R.R. Tolkien", "Fantasy", "book-10001", 
              "https://i.pinimg.com/736x/bc/e5/ee/bce5ee49b4ac62ac04624682d89c1973.jpg", "English", "Available", "A fantasy novel about Bilbo Baggins."),
             
-            ("10002", "1984", "George Orwell", "Dystopian", "978-0451524935", 
+            ("10002", "1984", "George Orwell", "Dystopian", "book-10002", 
              "https://i.pinimg.com/736x/c5/d2/1b/c5d21b7fb9ebc896cf46d5e6d67af4a7.jpg", "English", "Available", "A dystopian novel about totalitarianism."),
             
-            ("10003", "To Kill a Mockingbird", "Harper Lee", "Fiction", "978-0060935467", 
+            ("10003", "To Kill a Mockingbird", "Harper Lee", "Fiction", "book-10003", 
              "https://i.pinimg.com/736x/f4/42/f8/f442f8fd4a956ec12e885eec3af03058.jpg", "English", "Available", "A novel about racial injustice in the Deep South."),
             
-            ("10004", "Pride and Prejudice", "Jane Austen", "Romance", "978-0141040349", 
+            ("10004", "Pride and Prejudice", "Jane Austen", "Romance", "book-10004", 
              "https://i.pinimg.com/736x/44/0c/f2/440cf26fbc56038f637e88c611cf2469.jpg", "English", "Available", "A classic novel about love and society."),
             
-            ("10005", "The Catcher in the Rye", "J.D. Salinger", "Fiction", "978-0316769488", 
+            ("10005", "The Catcher in the Rye", "J.D. Salinger", "Fiction", "book-10005", 
              "https://i.pinimg.com/736x/9d/ae/50/9dae502a832263180e16aa8beeae0e47.jpg", "English", "Available", "A novel about teenage rebellion and alienation."),
             
-            ("10006", "The Great Gatsby", "F. Scott Fitzgerald", "Classic", "978-0743273565", 
-             "https://i.pinimg.com/736x/0e/d2/96/0ed296c2515faca99b63d2df238cf98a.jpg", "English", "Available", "A novel about wealth, love, and the American Dream.")
+            ("10006", "The Great Gatsby", "F. Scott Fitzgerald", "Classic", "book-10006", 
+             "https://i.pinimg.com/736x/0e/d2/96/0ed296c2515faca99b63d2df238cf98a.jpg", "English", "Available", "A novel about wealth, love, and the American Dream."),
+
+             ("10007", "Death Note", "Tsugumi Ohba", "Manga", "book-10007", 
+             "https://i.pinimg.com/736x/19/8e/c6/198ec67a64d88382c3f6432be9a9f5b8.jpg", "Japanese", "Available", "A psychological thriller about a notebook that can kill."),
+    
+            ("10008", "Attack on Titan", "Hajime Isayama", "Manga", "book-10008", 
+            "https://i.pinimg.com/736x/e0/8a/44/e08a44338b9a05023f88f7804d9a811a.jpg", "Japanese", "Available", "A story of humanity's fight against Titans."),
+            
+            ("10009", "One Piece", "Eiichiro Oda", "Manga", "book-10009", 
+            "https://i.pinimg.com/736x/9c/67/85/9c678519ec0383f1a69a5469f93246ed.jpg", "Japanese", "Available", "An adventure of a pirate seeking the One Piece treasure."),
+            
+            ("10010", "The Alchemist", "Paulo Coelho", "Philosophical Fiction", "book-10010", 
+            "https://i.pinimg.com/474x/ac/87/5c/ac875c2d6ad4cb80d786a4a9e177354a.jpg", "English", "Available", "A journey of self-discovery and destiny."),
+            
+            ("10011", "Demon Slayer: Kimetsu no Yaiba", "Koyoharu Gotouge", "Manga", "book-10011", 
+            "https://i.pinimg.com/736x/2a/fb/c7/2afbc7330c27de1174d243bdff245302.jpg", "Japanese", "Available", "A story of a boy fighting demons to avenge his family.")
         ]
 
         try:
@@ -135,9 +150,9 @@ def insert_users():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         users = [
-            ("John Doe", "john.doe@example.com", "password123", "G1234567X", "stu-24-00004", 1, "765343767958"),
-            ("Alice Smith", "alice.smith@example.com", "password456", "G7654321Y", "QR654321", 5, "1233333334"),
-            ("Bob Johnson", "bob.johnson@example.com", "password789", "F9876543Z", "QR987654", 10, "123123123234")
+            ("John Doe", "john.doe@example.com", "password123", "G1234567X", "user-00001", 1, "765343767958"),
+            ("Alice Smith", "alice.smith@example.com", "password456", "G7654321Y", "user-00002", 5, "1233333334"),
+            ("Bob Johnson", "bob.johnson@example.com", "password789", "F9876543Z", "user-00003", 10, "123123123234")
         ]
 
         try:
