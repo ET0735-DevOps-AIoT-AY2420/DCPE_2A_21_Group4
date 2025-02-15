@@ -21,6 +21,7 @@ def key_pressed(key):
     """Callback function to store keypress in queue."""
     shared_keypad_queue.put(str(key))  # Convert to string
     print(f" Key Pressed: {key}")  # Debugging
+    
 
 def verify_and_remove_loan(book_isbn, user_id):
     """Check if the book is loaned by the authenticated user and remove it on return."""
@@ -48,7 +49,8 @@ def verify_and_remove_loan(book_isbn, user_id):
         print("❌ No valid loan found.")
         conn.close()
         return False
-    
+
+
 def wait_for_book_code():
     """Collect multiple keypresses until '#' is pressed."""
     book_code = ""
@@ -71,6 +73,21 @@ def verify_book_code(book_code, user_id):
     book = cursor.fetchone()
     conn.close()
     return bool(book)
+
+#exit session
+def exit_session():
+    """Exit the session and return to user authentication."""
+    global current_user_id  # Reset user session
+    print("🔄 Exiting session... Returning to authentication.")
+    
+    lcd_display.lcd_clear()
+    lcd_display.lcd_display_string("Session Ended", 1)
+    time.sleep(2)
+    
+    current_user_id = None  # Clear authenticated user ID
+    lcd_display.lcd_clear()
+    lcd_display.lcd_display_string("System Ready", 1)
+    time.sleep(2)  # Display system ready message
 
 def main():
     global current_user_id  # Allow modifying the global variable
@@ -243,12 +260,17 @@ def main():
                     conn.close()
                     time.sleep(2)  # Allow time to display message
 
-# Reset user session after the process is complete
-                current_user_id = None
-                lcd_display.lcd_clear()
-                lcd_display.lcd_display_string("Session Ended", 1)
-                time.sleep(2)
-                lcd_display.lcd_clear()
+                if key == "4":  # Exit Process
+                    print("🚪 User selected EXIT.")
+                    lcd_display.lcd_clear()
+                    lcd_display.lcd_display_string("Exiting...", 1)
+                    time.sleep(2)
+                    lcd_display.lcd_clear()
+                    lcd_display.lcd_display_string("Session Ended", 1)
+                    time.sleep(2)
+                    lcd_display.lcd_clear()
+                    current_user_id = None  # Reset user session
+                    continue  # Return to the main loop
 
             else:
                 print("No user detected. Returning to idle state.")
