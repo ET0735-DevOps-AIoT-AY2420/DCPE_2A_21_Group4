@@ -48,6 +48,29 @@ def verify_and_remove_loan(book_isbn, user_id):
         print("❌ No valid loan found.")
         conn.close()
         return False
+    
+def wait_for_book_code():
+    """Collect multiple keypresses until '#' is pressed."""
+    book_code = ""
+    lcd_display.lcd_display_string("Enter Book Code", 1)
+
+    while True:
+        key = shared_keypad_queue.get()
+        
+        if key == "#":  # User finished entering
+            return book_code  
+        else:
+            book_code += str(key)  # Append pressed key
+            lcd_display.lcd_display_string(book_code, 2)  # Display entered digits
+
+def verify_book_code(book_code, user_id):
+    """Verify if the book is reserved by the user."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM loans WHERE bookId = ? AND userId = ? AND returnDate IS NULL", (book_code, user_id))
+    book = cursor.fetchone()
+    conn.close()
+    return bool(book)
 
 def main():
     global current_user_id  # Allow modifying the global variable
@@ -95,8 +118,8 @@ def main():
                     continue  # Retry
 
                 lcd_display.lcd_clear()
-                lcd_display.lcd_display_string("1. Collect 2. Return", 1)
-                lcd_display.lcd_display_string("3. Payment 4. Check", 2)
+                lcd_display.lcd_display_string("1Collect 2Return", 1)
+                lcd_display.lcd_display_string("3Payment 4Exit", 2)
                 print(f" User authenticated (ID: {current_user_id}). Options displayed.")
                 
                 # Wait until the user responds
@@ -105,7 +128,31 @@ def main():
 
                 key = shared_keypad_queue.get()
                 print(f" User selected option: {key}")
-                
+
+                if key == "1":  # Collect Book Process
+                    lcd_display.lcd_clear()
+                    print(" Waiting for book code entry...")
+                    book_code = wait_for_book_code()  # ✅ Collect full book code
+                    print(f" Book Code Entered: {book_code}")  # Debugging
+
+                    if verify_book_code(book_code, user.get('data', {}).get('id')):
+                        lcd_display.lcd_display_string("Book Dispensing", 1)
+
+                        GPIO.setup(26, GPIO.OUT)  # ✅ Ensure GPIO 26 is still set as output before using servo
+                        set_servo_position(90)  # ✅ Unlock book compartment
+                        time.sleep(3)
+                        set_servo_position(0)  # ✅ Lock again
+                        lcd_display.lcd_clear()
+                        lcd_display.lcd_display_string("Take Your Book", 1)
+                        time.sleep(3)
+                        lcd_display.lcd_display_string("Book Dispensed", 1)
+                        time.sleep(2)
+                        lcd_display.lcd_clear()
+                    else:
+                        lcd_display.lcd_display_string("Invalid Book Code", 1)
+                        time.sleep(2)
+                        lcd_display.lcd_clear()
+
                 if key == "2":  # Return Book Process
                     print("📖 User selected RETURN BOOK.")
                     lcd_display.lcd_clear()
@@ -195,9 +242,6 @@ def main():
                     
                     conn.close()
                     time.sleep(2)  # Allow time to display message
-
-
-
 
 # Reset user session after the process is complete
                 current_user_id = None
