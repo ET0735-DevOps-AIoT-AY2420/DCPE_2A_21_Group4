@@ -136,6 +136,11 @@ document.addEventListener("DOMContentLoaded", function() {
                     alert("There was an issue with your reservation.");
                 } else {
                     console.log("Book successfully reserved:", data.success);
+
+                    if (data.updated_count !== undefined) {
+                        sessionStorage.setItem("bookCount", data.updated_count);
+                    }
+    
                     window.location.href = `/reserved?user_id=${sessionStorage.getItem("userId")}&branchId=${branchId}`;
 
                 }
@@ -156,12 +161,22 @@ document.addEventListener("DOMContentLoaded", function() {
             const selectedBook = JSON.parse(sessionStorage.getItem("selectedBook"));
 
             if (!bookId || !selectedBook) {
-                alert("No book selected for borrowing.");
+                alert("No book selec ted for borrowing.");
                 return;
             }
 
             // Send a POST request to borrow the book with 'pending' status
             try {
+
+                const userId = sessionStorage.getItem("userId");
+                const countResponse = await fetch(`/api/get_reserved_count?userId=${userId}`);
+                const countData = await countResponse.json();
+
+                if (countData.count >= 10) {
+                    alert("You can only reserve up to 10 books at a time.");
+                    return;
+                }
+
                 const response = await fetch('/api/borrow_book', {
                     method: 'POST',
                     headers: {
@@ -184,7 +199,12 @@ document.addEventListener("DOMContentLoaded", function() {
                     alert("There was an issue with your borrowing request.");
                 } else {
                     console.log("Book successfully added to loans with 'pending' status:", data.success);
-                    window.location.href = "/homepage.html";  // Redirect to homepage after borrowing
+
+                    if (data.updated_count !== undefined) {
+                        sessionStorage.setItem("bookCount", data.updated_count);
+                    }
+                
+                    window.location.href = "/homepage";  // Redirect to homepage after borrowing
                 }
             } catch (error) {
                 console.error("Error borrowing the book:", error);

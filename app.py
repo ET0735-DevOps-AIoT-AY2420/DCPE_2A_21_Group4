@@ -43,35 +43,47 @@ def get_db_connection():
 
 # ---------------------- Borrow Book Func ----------------------
 
-def borrow_book(branch_bookId, book_id, user_id,isbn,branch_id):
+def borrow_book(branch_bookId, book_id, user_id, isbn, branch_id):
     """Mark a book as borrowed in a specific branch."""
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
 
-        print(f"Receiving Data: {branch_bookId},{book_id},{user_id},{isbn},{branch_id}")
+            print(f"Receiving Data: {branch_bookId},{book_id},{user_id},{isbn},{branch_id}")
 
-        # Check if the book is available in the selected branch
-        cursor.execute(''' 
-            SELECT id FROM branch_books
-            WHERE branchId = ? AND bookId = ? AND status = 'Available'
-        ''', (branch_id, book_id))
-        branch_book = cursor.fetchone()
+            # Check if the book is available in the selected branch
+            cursor.execute(''' 
+                SELECT id FROM branch_books
+                WHERE branchId = ? AND bookId = ? AND status = 'Available'
+            ''', (branch_id, book_id))
+            branch_book = cursor.fetchone()
 
-        if branch_book:
-            branch_book_id = branch_book[0]
+            if branch_book:
+                branch_book_id = branch_book[0]
 
-            # Insert a borrow request (status = 'pending')
-            cursor.execute('''
-                INSERT INTO loans (branchBookId,bookId, userId, isbn, borrowDate, branch, status)
-                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ? ,'pending')
-            ''', (branch_bookId, book_id, user_id, isbn, branch_id))
+                # Insert a borrow request (status = 'pending')
+                cursor.execute(''' 
+                    INSERT INTO loans (branchBookId, bookId, userId, isbn, borrowDate, branch, status)
+                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?, 'pending')
+                ''', (branch_book_id, book_id, user_id, isbn, branch_id))
 
-            conn.commit()
-            print("Book borrow request added successfully!")
-            return "Borrow request created successfully."
-        else:
-            print("Book is already borrowed or not available in this branch.")
-            return "Book is already borrowed or not available."
+                conn.commit()
+
+                cursor.execute("""
+                    SELECT COUNT(*) FROM loans WHERE userId = ? AND status = 'pending'
+                """, (user_id,))
+                updated_count = cursor.fetchone()[0]
+
+                return jsonify({"success": "Book borrowed", "updated_count": updated_count})
+
+            else:
+                print("Book is already borrowed or not available in this branch.")
+                return jsonify({"error": "Book is already borrowed or not available in this branch."}), 400
+
+    except Exception as e:
+        print(f"Error while borrowing the book: {e}")
+        return jsonify({"error": "Internal server error. Please try again later."}), 500
+
 
 def get_book_isbn(book_id):
     """Fetch ISBN of a book from the books table."""
@@ -692,6 +704,27 @@ def reserve_book():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+
+@app.route('/api/get_reserved_count', methods=['GET'])
+def get_reserved_count():
+    user_id = request.args.get('userId')
+
+    if not user_id:
+        return jsonify({"error": "User ID is required"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Count number of reserved books for the current user
+    cursor.execute("""
+        SELECT COUNT(*) FROM loans WHERE userId = ? AND status = 'pending'
+    """, (user_id,))
+    
+    count = cursor.fetchone()[0]
+
+    conn.close()
+    return jsonify({"count": count})
 
 
 # ---------------------- RUN SERVER ----------------------
