@@ -4,6 +4,7 @@ import sqlite3
 import os
 import subprocess
 import atexit
+import signal
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', os.urandom(24))
@@ -12,28 +13,30 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', os.urandom(24))
 
 DB_NAME = "/home/pi/ET0735/DCPE_2A_21_Group4/DCPE_2A_21_Group4/library.db"  # Adjust path when deploying
 
-lcd_process = subprocess.Popen(
-    ["python3", "/home/pi/ET0735/DCPE_2A_21_Group4/DCPE_2A_21_Group4/src/lcd_menu.py"],
-    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+cr_process = subprocess.Popen(
+    ["python3", "/home/pi/ET0735/DCPE_2A_21_Group4/DCPE_2A_21_Group4/src/cr.py"],
+    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+    preexec_fn=os.setsid  # Runs in a separate process group
 )
 
-# Read LCD output periodically (for debugging)
-def check_lcd_output():
-    if lcd_process.poll() is None:
-        stdout, stderr = lcd_process.communicate(timeout=1)
-        print("LCD Output:", stdout)
-        print("LCD Errors:", stderr)
+# Function to stop the LCD and barcode scanner process safely
+def stop_cr_menu():
+    if cr_process.poll() is None:  # Check if the process is still running
+        print("Stopping LCD and barcode scanner...")
 
+        # Kill the entire process group (including barcode scanner)
+        os.killpg(os.getpgid(cr_process.pid), signal.SIGTERM)
 
-# Function to stop the LCD menu subprocess
-def stop_lcd_menu():
-    if lcd_process.poll() is None:  # Check if the process is still running
-        lcd_process.terminate()  # Terminate the process
-        lcd_process.wait()  # Wait for the process to exit
-        print("LCD menu script stopped.")
+        try:
+            cr_process.wait(timeout=2)  # Wait for graceful shutdown
+        except subprocess.TimeoutExpired:
+            print("Process did not exit gracefully. Forcing shutdown...")
+            os.killpg(os.getpgid(cr_process.pid), signal.SIGKILL)  # Force kill
 
-# Register the cleanup function to run when the Flask app exits
-atexit.register(stop_lcd_menu)
+        print("LCD and barcode scanner stopped.")
+
+# Register cleanup function to stop the process when Flask exits
+atexit.register(stop_cr_menu)
 
 def get_db_connection():
     """Create and return a database connection."""
@@ -671,8 +674,8 @@ def reserve_book():
             # Check if the book is already reserved by this user
             cursor.execute("""
                 SELECT id FROM loans 
-                WHERE bookId = ? AND userId = ? AND status = 'reserved' AND returnDate IS NULL
-            """, (book_id, user_id))
+                WHERE bookId = ? AND userId = ? AND And branch = ? AND status = 'pending' AND returnDate IS NULL
+            """, (book_id, user_id, branch))
             existing_reservation = cursor.fetchone()
 
             if existing_reservation:
@@ -683,7 +686,7 @@ def reserve_book():
             cursor.execute("""
                 UPDATE loans
                 SET status = 'reserved'
-                WHERE bookId = ? AND userId = ? AND status = 'pending'
+                WHERE bookId = ? AND userId = ? AND status = 'reserved'
             """, (book_id, user_id))
 
             cursor.execute("""

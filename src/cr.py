@@ -8,6 +8,7 @@ from hal.hal_lcd import lcd
 from hal.hal_servo import set_servo_position
 from hal.hal_usonic import init as usonic_init, get_distance
 from hal.hal_keypad import init as keypad_init, get_key
+from hal.hal_buzzer import init as buzzer_init, beep
 from barcode_scanner import scan_barcode
 from hal.hal_rfid_reader import SimpleMFRC522
 from database import get_db_connection
@@ -21,6 +22,7 @@ def key_pressed(key):
     """Callback function to store keypress in queue."""
     shared_keypad_queue.put(str(key))  # Convert to string
     print(f" Key Pressed: {key}")  # Debugging
+    beep(0.1, 0.1, 1)  # Beep once for 0.1 seconds
     
 
 def verify_and_remove_loan(book_isbn, user_id):
@@ -98,6 +100,7 @@ def main():
     usonic_init()
     keypad_init(key_pressed)  # ✅ Fix: Assign callback function
     GPIO.setup(26, GPIO.OUT)  # ✅ Set GPIO 26 as output for the servo
+    buzzer_init()  # Initialize the buzzer
 
     # ✅ Start keypad polling in background thread
     keypad_thread = Thread(target=get_key, daemon=True)
@@ -127,6 +130,7 @@ def main():
             if user:
                 if user and 'data' in user and 'id' in user['data']:
                     current_user_id = user['data']['id']  # ✅ Access user ID correctly
+                    beep(0.1, 0.1, 2)  # Beep twice for successful authentication
                 else:
                     print("Authentication failed: Invalid user data.")
                     lcd_display.lcd_clear()
@@ -155,6 +159,8 @@ def main():
 
                         if verify_book_code(book_code, user.get('data', {}).get('id')):
                             lcd_display.lcd_display_string("Book Dispensing", 1)
+                            
+                            beep(0.1, 0.1, 1)  # Beep once for book dispensing
 
                             GPIO.setup(26, GPIO.OUT)  # ✅ Ensure GPIO 26 is still set as output before using servo
                             set_servo_position(90)  # ✅ Unlock book compartment
@@ -200,6 +206,7 @@ def main():
                             
                             lcd_display.lcd_clear()
                             lcd_display.lcd_display_string("Return Successful", 1)
+                            beep(0.1, 0.1, 1)  # Beep once for successful return
                         else:
                             print(" Invalid Loan or No Loan Found.")
                             lcd_display.lcd_clear()
@@ -264,6 +271,7 @@ def main():
                                 print("✅ Payment Successful.")
                                 lcd_display.lcd_clear()
                                 lcd_display.lcd_display_string("Payment Successful", 1)
+                                beep(0.1, 0.1, 1)  # Beep once for payment success
                             else:
                                 print("❌ Payment Canceled.")
                                 lcd_display.lcd_clear()
