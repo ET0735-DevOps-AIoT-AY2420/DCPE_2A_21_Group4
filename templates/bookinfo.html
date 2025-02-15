@@ -45,4 +45,18 @@
             </button>
         </div>
     </div>
+
+    <div id="borrowModal" class="modal">
+        <div class="modal-content">
+            <h3>Borrow Books: <span id="book-count">0</span>/10</h3>
+            <div class="modal-buttons">
+                <button id="continue-button">Continue</button>
+                <button id="reserve-now-button">Reserve Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔗 Link JavaScript File -->
+    <script src="{{ url_for('static', filename='js/biscript.js') }}" defer></script>
 </body>
+</html>
