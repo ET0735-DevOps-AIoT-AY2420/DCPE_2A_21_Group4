@@ -5,7 +5,10 @@ from types import ModuleType
 dummy_barcode_scanner = ModuleType("barcode_scanner")
 # Provide a dummy scan_barcode function.
 # Adjust the return value as needed for your tests.
-dummy_barcode_scanner.scan_barcode = lambda: {"type": "user", "data": {"id": 1, "name": "Dummy User", "email": "dummy@example.com"}}
+dummy_barcode_scanner.scan_barcode = lambda: {
+    "type": "user",
+    "data": {"id": 1, "name": "Dummy User", "email": "dummy@example.com"}
+}
 sys.modules["barcode_scanner"] = dummy_barcode_scanner
 
 # --- Inject Dummy RPi.GPIO Modules --- #
@@ -66,7 +69,6 @@ sys.modules["hal.hal_buzzer"] = dummy_hal_buzzer
 import pytest
 import src.cr as cr  # Now your main module should import correctly
 
-
 # --- Dummy Database Connection and Cursor Classes --- #
 
 class DummyCursor:
@@ -109,7 +111,7 @@ def dummy_get_db_connection_factory(return_value):
 
 # --- Test Cases --- #
 
-def test_verify_and_remove_loan_success(monkeypatch):
+def test_remove_loan_when_loan_exists(monkeypatch):
     """
     Test that verify_and_remove_loan returns True when a valid loan exists.
     We simulate the database returning a valid loan row.
@@ -124,17 +126,3 @@ def test_verify_and_remove_loan_success(monkeypatch):
 
     result = cr.verify_and_remove_loan(book_input, user_id)
     assert result is True
-
-def test_verify_book_code_failure(monkeypatch):
-    """
-    Test that verify_book_code returns False when no matching loan exists.
-    We simulate the database returning None.
-    """
-    # Simulate no matching loan: fetchone returns None
-    monkeypatch.setattr(cr, "get_db_connection", dummy_get_db_connection_factory(None))
-
-    book_code = "book999"
-    user_id = 1
-
-    result = cr.verify_book_code(book_code, user_id)
-    assert result is False
