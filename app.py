@@ -4,13 +4,14 @@ import sqlite3
 import os
 import subprocess
 import atexit
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', os.urandom(24))
 
 
 
-DB_NAME = "/home/pi/ET0735/DCPE_2A_21_Group4/DCPE_2A_21_Group4/library.db"  # Adjust path when deploying
+DB_NAME = "C:\Local_Git_Repository\LibraryMS\DCPE_2A_21_Group4\library.db" 
 
 lcd_process = subprocess.Popen(
     ["python3", "/home/pi/ET0735/DCPE_2A_21_Group4/DCPE_2A_21_Group4/src/lcd_menu.py"],
@@ -96,6 +97,108 @@ def get_book_isbn(book_id):
         if result:
             return result[0]  # Return the ISBN
         return None  # Return None if no ISBN is found
+    
+# ---------------------- EXTEND ----------------------
+@app.route('/get_loans', methods=['GET'])
+def get_loans():
+    """Fetch all loans for a given user with book details."""
+    user_id = request.args.get('userId')
+    if not user_id:
+        return jsonify({"error": "User ID is required"}), 400
+    
+    conn = get_db_connection() 
+    cursor = conn.cursor()
+
+    query = """
+        SELECT 
+            loans.id, 
+            books.title, 
+            loans.dueDate, 
+            loans.extendStatus,
+            books.genre, 
+            books.image
+        FROM loans
+        INNER JOIN books ON loans.bookId = books.bookId
+        WHERE loans.userId = ? AND loans.status = 'reserved'
+    """
+    cursor.execute(query, (user_id,))
+    loans = cursor.fetchall()
+
+    conn.close()
+
+    return jsonify([
+        {
+            "id": loan[0],
+            "title": loan[1],
+            "dueDate": loan[2],  
+            "extendStatus": loan[3], 
+            "genre": loan[4],
+            "image": loan[5]
+
+        }
+        for loan in loans
+    ])
+
+@app.route('/extend_loan', methods=['POST'])
+def extend_loan():
+    """Extend the loan due date for a specific loan."""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "Invalid JSON data"}), 400
+
+        print(f"Received data: {data}")  # Debugging log
+
+        loan_id = data.get('loanId')
+        new_due_date = data.get('newDueDate')
+
+        if not loan_id or not new_due_date:
+            return jsonify({"error": "Missing loanId or newDueDate"}), 400
+        
+        # Parse the 'newDueDate'
+        try:
+            new_due_date = datetime.strptime(new_due_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+        except Exception as e:
+            return jsonify({"error": f"Invalid date format: {str(e)}"}), 400
+        
+        print(f"Parsed newDueDate: {new_due_date}")
+
+        # Fetch the current loan details
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        query = "SELECT dueDate, extendStatus FROM loans WHERE id = ?"
+        cursor.execute(query, (loan_id,))
+        result = cursor.fetchone()
+
+        if not result:
+            conn.close()
+            return jsonify({"error": "Loan not found"}), 404
+
+        old_due_date = result[0]  # Get dueDate from database
+
+        if old_due_date is None:
+            old_due_date = datetime.today().strftime("%Y-%m-%d")
+
+        old_due_date = datetime.strptime(old_due_date, "%Y-%m-%d")
+        new_due_date = old_due_date + timedelta(days=7)  # Or use the passed-in date if needed
+
+        update_query = """
+            UPDATE loans
+            SET dueDate = ?, extendDate = ?, extendStatus = 'Yes'
+            WHERE id = ?
+        """
+        cursor.execute(update_query, (new_due_date.strftime("%Y-%m-%d"), datetime.now().strftime("%Y-%m-%d"), loan_id))
+        conn.commit()
+        conn.close()
+
+        print(f"Loan {loan_id} extended successfully. New due date: {new_due_date.strftime('%Y-%m-%d')}")
+
+        return jsonify({"message": "Loan extended successfully", "new_due_date": new_due_date.strftime("%Y-%m-%d")})
+
+    except Exception as e:
+        print(f"Error in /extend_loan: {e}")  # Debugging log
+        return jsonify({"error": str(e)}), 500
 
 # ---------------------- SIGN UP ----------------------
 @app.route("/", methods=["GET", "POST"])
