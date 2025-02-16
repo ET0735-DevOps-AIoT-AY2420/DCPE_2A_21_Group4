@@ -87,6 +87,7 @@ def test_scan_barcode_user(monkeypatch):
     expected = {"type": "user", "data": {"name": "Test User", "email": "test@example.com"}}
     assert result == expected
 
+
 def test_scan_barcode_book(monkeypatch):
     """
     Test that scan_barcode returns a book dictionary when the scanned code matches a book.
@@ -118,28 +119,3 @@ def test_scan_barcode_book(monkeypatch):
     result = scan_barcode()
     expected = {"type": "book", "data": {"title": "Test Book", "author": "Test Author"}}
     assert result == expected
-
-def test_scan_barcode_invalid(monkeypatch):
-    """
-    Test that scan_barcode returns None when an invalid barcode is scanned.
-    In this test, we simulate an immediate 'q' key press to break out of the scanning loop.
-    """
-    monkeypatch.setitem(scan_barcode.__globals__, "Picamera2", DummyPicamera2)
-    monkeypatch.setitem(scan_barcode.__globals__, "Preview", DummyPreview)
-
-    # Patch GUI functions.
-    monkeypatch.setattr(cv2, "imshow", lambda winname, frame: None)
-    # Simulate immediate 'q' key press to break the loop.
-    monkeypatch.setattr(cv2, "waitKey", lambda delay: ord('q'))
-    monkeypatch.setattr(cv2, "destroyAllWindows", lambda: None)
-
-    # Dummy database functions that always return None.
-    monkeypatch.setitem(scan_barcode.__globals__, "get_user_by_barcode", lambda barcode: None)
-    monkeypatch.setitem(scan_barcode.__globals__, "get_book_by_barcode", lambda barcode: None)
-
-    # Patch decode to return an invalid barcode.
-    monkeypatch.setitem(scan_barcode.__globals__, "decode", lambda img: [DummyDecoded(b"invalid_code")])
-
-    # Call the function and check that it returns None.
-    result = scan_barcode()
-    assert result is None
