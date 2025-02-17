@@ -12,23 +12,24 @@ sys.stdout.reconfigure(line_buffering=True)
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', os.urandom(24))
 
-DB_NAME = "/home/pi/ET0735/DCPE_2A_21_Group4/DCPE_2A_21_Group4/library.db"  # Adjust path when deploying
+DB_NAME = "/home/pi/ET0735/DCPE_2A_21_Group4/library.db"  # Adjust path when deploying
 
-def read_cr_output():
-    """Read output from cr.py and print it in real time."""
-    while True:
-        output = cr_process.stdout.readline()  # Read a line from cr.py
-        if output:
-            print(f"LCD Output: {output.strip()}")  # Print to debug
 
-# Start a separate thread to read LCD messages
-threading.Thread(target=read_cr_output, daemon=True).start()
-# Start LCD script and barcode scanner as a separate process group
-cr_process = subprocess.Popen(
-    ["python3","-u", "/home/pi/ET0735/DCPE_2A_21_Group4/DCPE_2A_21_Group4/src/cr.py"],
-    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-    preexec_fn=os.setsid  # Runs in a separate process group
-)
+# # Start LCD script and barcode scanner as a separate process group
+# cr_process = subprocess.Popen(
+#     ["python","-u", "/home/pi/ET0735/DCPE_2A_21_Group4/src/cr.py"],
+#     stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+#     preexec_fn=os.setsid  # Runs in a separate process group
+# )
+# def read_cr_output():
+#     """Read output from cr.py and print it in real time."""
+#     while True:
+#         output = cr_process.stdout.readline()  # Read a line from cr.py
+#         if output:
+#             print(f"LCD Output: {output.strip()}")  # Print to debug
+
+# # Start a separate thread to read LCD messages
+# threading.Thread(target=read_cr_output, daemon=True).start()
 
 # Function to stop the LCD and barcode scanner process safely
 def stop_cr_menu():
@@ -793,7 +794,7 @@ def reserve_book():
             cursor.execute("""
                 UPDATE loans
                 SET status = 'reserved'
-                WHERE bookId = ? AND userId = ? AND status = 'reserved'
+                WHERE bookId = ? AND userId = ? AND status = 'pending'
             """, (book_id, user_id))
 
             cursor.execute("""
@@ -839,5 +840,5 @@ def get_reserved_count():
 
 # ---------------------- RUN SERVER ----------------------
 if __name__ == '__main__':
-  app.run(debug=True, host='0.0.0.0', threaded=True)
+  app.run(debug=True, host='0.0.0.0', threaded=True, port=5000)
  
