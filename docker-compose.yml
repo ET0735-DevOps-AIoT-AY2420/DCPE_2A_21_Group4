@@ -1,0 +1,36 @@
+version: "3.3"
+
+services:
+  app:
+    build: .
+    container_name: library-system
+    ports:
+      - "5000:5000"
+    privileged: true
+    devices:
+      # Camera Interfaces
+      - /dev/vchiq:/dev/vchiq
+      - /dev/video0:/dev/video0
+      - /dev/video0:/dev/video1
+
+      # GPIO Access
+      - /dev/gpiomem:/dev/gpiomem
+
+      # I2C Bus (e.g., for I2C LCDs, sensors)
+      - /dev/i2c-1:/dev/i2c-1
+
+      # SPI (e.g., for RFID or other SPI devices)
+      - /dev/spidev0.0:/dev/spidev0.0
+      - /dev/spidev0.1:/dev/spidev0.1
+
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DISPLAY=:0
+
+    volumes:
+      - .:/app            # Binds the current project directory into /app (for code)
+      - library_data:/app/data  # Named volume for persistent storage
+      - /tmp/.X11-unix:/tmp/.X11-unix  # Mount the X11 socket
+
+volumes:
+  library_data:
