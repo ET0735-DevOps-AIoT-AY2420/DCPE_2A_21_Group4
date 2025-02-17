@@ -75,16 +75,11 @@ The system comprises the following components:
 - **User dashboard**: View borrowed books, due dates, and fines.
 - **Notifications**: Alerts for due dates, availability, etc.
 
-## 4. Book Borrowing & Returning
-- User scans a book's **barcode** to borrow/return a book.
+## 4. Book Borrowing & Reservation
+- User can borrow and reserve books that shows Availability status is "Available" in each branch
 - System updates book **status**.
 
-## 5. Admin Dashboard (For Librarians)
-- **Manage books** (add, edit, delete).
-- **Approve reservations**.
-- **View system analytics**.
-
-## 6. Exit
+## 5. Exit
 - User logs out or session.
 
 
@@ -98,9 +93,9 @@ The system comprises the following components:
 ## Software Architecture
 The static software architecture includes:
 - **Application Layer**:
-  - Main.py
-  - Power_Mgt.py
-  - Auth.py
+  - main.py
+  - app.py
+  - database.py
   - calculation.py
 - **Hardware Abstraction Layer (HAL)**:
   - hal_servo.py
@@ -111,6 +106,10 @@ The static software architecture includes:
   - hal_lcd.py
   - hal_led.py
   - hal_buzzer.py
+  - hal_usonic.py
+  - barcode_scanner.py
+  - cr.py
+    
     
 ---
 
@@ -118,11 +117,9 @@ The static software architecture includes:
 1. **User**:
    - Register an account and log in.
    - Search and reserve books.
-   - Receive notifications and pay fines for overdue returns.
-2. **Admin**:
-   - Add or update book details.
-   - Monitor reservations and usage reports.
-
+   - Collect Books.
+   - Return Books.
+   - Pay fines.
 ---
 
 
