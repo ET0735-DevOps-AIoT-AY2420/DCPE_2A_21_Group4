@@ -25,14 +25,12 @@ The Library Book Reservation and Collection System is designed to:
 ---
 
 ## Features
-- **Book Reservation**: Search and reserve books online with real-time availability updates.
-- **Book Collection**:Once reserved, users will receive notifications when books are available for collection.
+- **Book Reservation**: Users can select a branch, search for books by title or author, modify their borrowed list, and reserve books with real-time availability updates.
+- **Book Collection**:: A countdown timer reminds users to collect reserved books, with an option to extend the collection date.
 - **User Accounts**: Manage user accounts, including login and profile updates.
 - **Book Catalog and Search**: Search catalog functionality by title, author, genre, or keyword.
-- **Notifications**: Alerts for reservations, availability, and collection reminders.
-- **Reservation Management**: Users can modify or cancel their reservations, within library policies.
-- **Admin Dashboard**: Staff manage books, users, and generate usage reports.
-- **Data and Reporting**: The system tracks reservations and user activity, generating reports for staff.
+- **Reservation Management**:Users can modify their borrowed book list before confirming reservations and extending the borrowing period.
+- **User Dashboard**: Users can view the number of borrowed books, payable fines for loans, and their profile information.
 - **Accessibility**: Available on web and mobile platforms.
 - **Security**: Implements secure login protocols and data protection.
 - **Library Integration**: Synchronizes with existing library systems.
@@ -42,8 +40,8 @@ The Library Book Reservation and Collection System is designed to:
 ## System Architecture
 The system comprises the following components:
 1. **User Interface**: Web and mobile platforms for users and administrators.
-2. **Backend Services**: Handles authentication, reservations, notifications, and system integrations.
-3. **Database**: Stores user data, book details, and reservation records.
+2. **Backend Services**: Handles authentication,borrowing, reservations, and system integrations.
+3. **Database**: Stores user data, branch books details, book details, and reservation records.
 4. **Hardware Integration**: Includes RFID scanners, barcode readers, and book dispensing units.
 
 ---
@@ -58,6 +56,37 @@ The system comprises the following components:
 7. Barcode scanning for book returns.
 
 ---
+
+# Library System Website Flow
+
+## 1. Entry Point
+- User opens the website → **Sign up** 
+
+## 2. Authentication
+- **New User**: Clicks **Sign Up**, enters details, and creates an account.
+- **Existing User**: Clicks **Login**, enters credentials, and accesses the system.
+
+## 3. Main Menu
+--**Choose Branch**: Users can choose branch 1 or branch 2.
+- **Home Page**:Users can seen books by branches
+- **Book Search**: User searches by **title, author, or genre**.
+- **Book Information** : Users can view book information and its availability status.
+- **Book Reservation**: User reserves available books.
+- **User dashboard**: View borrowed books, due dates, and fines.
+- **Notifications**: Alerts for due dates, availability, etc.
+
+## 4. Book Borrowing & Returning
+- User scans a book's **barcode** to borrow/return a book.
+- System updates book **status**.
+
+## 5. Admin Dashboard (For Librarians)
+- **Manage books** (add, edit, delete).
+- **Approve reservations**.
+- **View system analytics**.
+
+## 6. Exit
+- User logs out or session.
+
 
 ## Non-Functional Requirements
 1. **Power Management**: Switch between low and high-power modes based on user activity.
