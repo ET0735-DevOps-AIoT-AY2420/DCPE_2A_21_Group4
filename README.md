@@ -11,10 +11,11 @@ The Library Book Reservation and Collection System is designed to enhance the bo
 - [Library System Website Flow](#library-websiteflow)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Demo Video Link](#videolink)
+- [Demo Video Link](#demovideolink)
 - [Contribution](#contribution)
 
 ---
+
 ## Purpose
 
 Target audience: Readers of all ages who value a modern and efficient library experience.
@@ -25,6 +26,7 @@ The Library Book Reservation and Collection System is designed to:
 - Enhance user engagement with timely notifications and personalized profiles.
 
 ---
+
 ## Features
 - **Book Reservation**: Users can select a branch, search for books by title or author, modify their borrowed list, and reserve books with real-time availability updates.
 - **Book Collection**:: A countdown timer reminds users to collect reserved books, with an option to extend the collection date.
@@ -35,7 +37,7 @@ The Library Book Reservation and Collection System is designed to:
 - **Accessibility**: Available on web and mobile platforms.
 - **Security**: Implements secure login protocols and data protection.
 - **Library Integration**: Synchronizes with existing library systems.
-- 
+  
 ---
 
 ## Functional Requirements
@@ -46,6 +48,7 @@ The Library Book Reservation and Collection System is designed to:
 5. Loan period of 18 days, with a one-time renewal for 7 days.
 6. Payment management for overdue fines.
 7. Barcode scanning for book returns.
+   
 ---
 
 ## Non-Functional Requirements
@@ -55,7 +58,8 @@ The Library Book Reservation and Collection System is designed to:
 
 ---
 
-## Software Architecture
+## Software Architecture 
+(The Diagram is provided in the SRS document )
 The static software architecture includes:
 - **Application Layer**:
   - app.py
@@ -76,7 +80,8 @@ The static software architecture includes:
   - hal_buzzer.py
   - hal_usonic.py
   - test_cr.py
-  - test_camera.py   
+  - test_camera.py
+    
 ---
 
 ## Library System Website Flow
@@ -88,7 +93,7 @@ The static software architecture includes:
 - **Existing User**: Clicks **Sign In***, enters credentials, and accesses the system. ( Assuming user has already account )
 
 ### 3. Main Menu
---**Choose Branch**: Users can choose branch 1 or branch 2.
+-**Choose Branch**: Users can choose branch 1 or branch 2.
 - **Home Page**:Users can seen books by branches
 - **Book Search**: User searches by **title, author, or genre**.
 - **Book Information** : Users can view book information and its availability status.
@@ -136,6 +141,7 @@ The static software architecture includes:
 - Process: Reserve Button
 - Ater Reserved, Borrowed Books can view and also can check manually on Borrowed Page and extend period
 - And On Userdashboard, can check borrowed books, payable fines and User Profile
+  
 ---
 
 ## Usage
