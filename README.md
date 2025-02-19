@@ -127,7 +127,7 @@ The static software architecture includes:
 - Please run the cr.py from the src in the vnc viewer using Thonny. The required libraries must be installed before running. picamera2, libcamera, pyzbar and 
   thonny. 
   The app.py should be running first to collaborate with the database and check the functions. 
-  Kindly use the qr codes provided to test the scanning. (Barcodes are attached in the docs/ barcodes folder)
+  Kindly use the qr codes provided to test the scanning. **(Barcodes are attached in the docs/ barcodes folder)**
  - Run app.py , and then the server will run on localhost
 
 ### Steps to Do in Website:
@@ -139,7 +139,7 @@ The static software architecture includes:
 - Process: Borrow Button -> Reserve Button
 - Reserve books can be view with respective title and branch
 - Process: Reserve Button
-- Ater Reserved, Borrowed Books can view and also can check manually on Borrowed Page and extend period
+- After Reserved, Borrowed Books can view and also can check manually on Borrowed Page and extend period
 - And On Userdashboard, can check borrowed books, payable fines and User Profile
   
 ---
